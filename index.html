@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MGH Surgery</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>MGH Surgery</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active">
+                        <a href="#on-call">
+                            <i class="ri-calendar-line"></i>
+                            On Call
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#attending-preferences">
+                            <i class="ri-user-settings-line"></i>
+                            Attending Preferences
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#useful-numbers">
+                            <i class="ri-phone-line"></i>
+                            Useful Numbers
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#resources">
+                            <i class="ri-folder-line"></i>
+                            Resources
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <!-- On Call Section -->
+            <div id="on-call" class="page active">
+                <div class="content-header">
+                    <div class="header-left">
+                        <h2>On-Call Schedule</h2>
+                        <div class="last-updated">
+                            Last Updated: 12:21:01 PM
+                            <i class="ri-refresh-line refresh-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-body">
+                    <div class="date-navigation">
+                        <i class="ri-arrow-left-s-line nav-arrow"></i>
+                        <div class="date">
+                            <div class="day">TUESDAY</div>
+                            <div class="number">May 27</div>
+                        </div>
+                        <i class="ri-arrow-right-s-line nav-arrow"></i>
+                    </div>
+
+                    <div id="schedule-unavailable" class="schedule-unavailable" style="display: none;">
+                        <i class="ri-information-line"></i>
+                        <p>Call Schedule Unavailable</p>
+                    </div>
+
+                    <!-- Pit Team Section -->
+                    <section class="team-section" id="pit-team-section">
+                        <h3>Pit Team</h3>
+                        <div class="team-grid" id="pit-team-grid">
+                            <!-- Team cards will be inserted here -->
+                        </div>
+                    </section>
+
+                    <!-- Baker Teams Section -->
+                    <section class="team-section" id="baker-team-section">
+                        <h3>Baker Teams</h3>
+                        <div class="team-grid" id="baker-team-grid">
+                            <!-- Team cards will be inserted here -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Attending Preferences Section -->
+            <div id="attending-preferences" class="page">
+                <div class="content-header">
+                    <div class="header-left">
+                        <h2>Attending Preferences</h2>
+                        <div class="last-updated">
+                            Last Updated: 12:21:01 PM
+                            <i class="ri-refresh-line refresh-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="placeholder-message">
+                        <i class="ri-user-settings-line"></i>
+                        <p>Attending preferences content will be added here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Useful Numbers Section -->
+            <div id="useful-numbers" class="page">
+                <div class="content-header">
+                    <div class="header-left">
+                        <h2>Useful Numbers</h2>
+                        <div class="last-updated">
+                            Last Updated: 12:21:01 PM
+                            <i class="ri-refresh-line refresh-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="placeholder-message">
+                        <i class="ri-phone-line"></i>
+                        <p>Contact information will be added here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resources Section -->
+            <div id="resources" class="page">
+                <div class="content-header">
+                    <div class="header-left">
+                        <h2>Resources</h2>
+                        <div class="last-updated">
+                            Last Updated: 12:21:01 PM
+                            <i class="ri-refresh-line refresh-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="placeholder-message">
+                        <i class="ri-folder-line"></i>
+                        <p>Resources and documents will be added here</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

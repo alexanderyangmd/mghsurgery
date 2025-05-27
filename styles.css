@@ -1,0 +1,335 @@
+:root {
+    --primary-color: #00A3E0;
+    --text-color: #333333;
+    --background-color: #FFFFFF;
+    --border-color: #E5E7EB;
+    --sidebar-width: 220px;
+    --header-height: 60px;
+    --font-weight-normal: 400;
+    --font-weight-medium: 450;
+    --font-weight-semibold: 500;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: var(--font-weight-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.dashboard {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: #F9FAFB;
+    border-right: 1px solid var(--border-color);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h1 {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 8px 0;
+}
+
+.sidebar-nav li {
+    margin: 2px 0;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    color: #6B7280;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-normal);
+}
+
+.sidebar-nav a i {
+    margin-right: 10px;
+    font-size: 1rem;
+}
+
+.sidebar-nav li.active a {
+    background-color: #F3F4F6;
+    color: var(--primary-color);
+}
+
+.sidebar-nav a:hover {
+    background-color: #F3F4F6;
+}
+
+/* Main Content Styles */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    background-color: #F9FAFB;
+}
+
+.content-header {
+    padding: 16px 24px;
+    background-color: white;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-left h2 {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-semibold);
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.last-updated {
+    color: #6B7280;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: var(--font-weight-normal);
+}
+
+.refresh-icon {
+    color: var(--primary-color);
+    cursor: pointer;
+}
+
+/* Content Body Styles */
+.content-body {
+    padding: 16px 24px;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Date Navigation */
+.date-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 16px 0;
+    gap: 24px;
+}
+
+.date-navigation .date {
+    text-align: center;
+}
+
+.date-navigation .day {
+    font-size: 0.8rem;
+    color: #6B7280;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    font-weight: var(--font-weight-normal);
+}
+
+.date-navigation .number {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-semibold);
+    color: #111827;
+}
+
+.nav-arrow {
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+/* Team Sections */
+.team-section {
+    margin-bottom: 24px;
+}
+
+.team-section h3 {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: #111827;
+    margin-bottom: 12px;
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.team-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.team-card h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 12px;
+}
+
+.team-member {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.team-member:last-child {
+    border-bottom: none;
+}
+
+.member-role {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.member-name {
+    font-size: 0.8rem;
+    color: #111827;
+}
+
+.member-time {
+    font-size: 0.8rem;
+    color: #6B7280;
+}
+
+/* Day/Night Toggle */
+.shift-toggle {
+    display: flex;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.shift-toggle button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: white;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.shift-toggle button.active {
+    background-color: #F3F4F6;
+    color: var(--primary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.placeholder-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    text-align: center;
+    color: #6B7280;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin: 24px 0;
+}
+
+.placeholder-message i {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    color: #9CA3AF;
+}
+
+.placeholder-message p {
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-normal);
+}
+
+.schedule-unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    margin: 2rem 0;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+    text-align: center;
+}
+
+.schedule-unavailable i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.schedule-unavailable p {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.night-card {
+    background-color: white;
+    border-left: 4px solid #6B7280;
+} 
