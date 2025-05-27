@@ -32,15 +32,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     lastUpdated.textContent = `Last Updated: ${timeString}`;
                 }
                 
-                // Fetch and update schedule
-                fetchAmionData(currentDisplayDate)
-                    .then(teams => {
-                        updateScheduleDisplay(teams || {});
-                    })
-                    .catch(error => {
-                        console.error('Error fetching schedule:', error);
-                        updateScheduleDisplay({});
-                    });
+                // Fetch both schedules
+                Promise.all([
+                    fetchAmionData(currentDisplayDate),
+                    fetchChurchillData(currentDisplayDate)
+                ]).then(([teams, churchillAttendings]) => {
+                    updateScheduleDisplay(teams || {});
+                    updateChurchillAttendingDisplay(churchillAttendings);
+                }).catch(error => {
+                    console.error('Error fetching schedules:', error);
+                    updateScheduleDisplay({});
+                    updateChurchillAttendingDisplay(null);
+                });
             });
         });
     }
@@ -68,15 +71,87 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initial load of schedule with current date
-    fetchAmionData(currentDisplayDate)
-        .then(teams => {
-            updateScheduleDisplay(teams || {});
-        })
-        .catch(error => {
-            console.error('Error fetching schedule:', error);
-            updateScheduleDisplay({});
+    // Initial load of schedules with current date
+    Promise.all([
+        fetchAmionData(currentDisplayDate),
+        fetchChurchillData(currentDisplayDate)
+    ]).then(([teams, churchillAttendings]) => {
+        updateScheduleDisplay(teams || {});
+        updateChurchillAttendingDisplay(churchillAttendings);
+    }).catch(error => {
+        console.error('Error fetching schedules:', error);
+        updateScheduleDisplay({});
+        updateChurchillAttendingDisplay(null);
+    });
+
+    // Phone Directory Functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const phoneGrids = document.querySelectorAll('.phone-grid');
+    
+    // Sample data structure for phone numbers
+    const phoneDirectory = {
+        attending: [
+            { name: 'Dr. Smith', role: 'Chief of Surgery', number: '617-555-0101' },
+            { name: 'Dr. Johnson', role: 'Trauma Surgery', number: '617-555-0102' },
+            // Add more attending numbers...
+        ],
+        resident: [
+            { name: 'Dr. Brown', role: 'Chief Resident', number: '617-555-0201' },
+            { name: 'Dr. Davis', role: 'PGY-4', number: '617-555-0202' },
+            // Add more resident numbers...
+        ],
+        app: [
+            { name: 'Jane Smith', role: 'Surgical APP', number: '617-555-0251' },
+            { name: 'John Doe', role: 'Trauma APP', number: '617-555-0252' },
+            // Add more APP numbers...
+        ],
+        other: [
+            { name: 'OR Front Desk', role: 'Main Line', number: '617-555-0301' },
+            { name: 'PACU', role: 'Nurse Station', number: '617-555-0302' },
+            // Add more important numbers...
+        ]
+    };
+
+    // Function to create phone card
+    function createPhoneCard(contact) {
+        return `
+            <div class="phone-card">
+                <div class="contact-info">
+                    <div class="contact-name">${contact.name}</div>
+                    <div class="contact-role">${contact.role}</div>
+                </div>
+                <div class="phone-number">${contact.number}</div>
+            </div>
+        `;
+    }
+
+    // Function to update phone grids
+    function updatePhoneGrids(category = 'all') {
+        Object.entries(phoneDirectory).forEach(([key, contacts]) => {
+            const grid = document.querySelector(`#${key}-numbers .phone-grid`);
+            
+            if (category === 'all' || category === key) {
+                grid.innerHTML = contacts
+                    .map(contact => createPhoneCard(contact))
+                    .join('');
+                document.getElementById(`${key}-numbers`).style.display = 'block';
+            } else {
+                document.getElementById(`${key}-numbers`).style.display = 'none';
+            }
         });
+    }
+
+    // Initialize phone grids
+    updatePhoneGrids();
+
+    // Handle category tab clicks
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            updatePhoneGrids(button.dataset.category);
+        });
+    });
 });
 
 function updateDate(offset) {
@@ -108,15 +183,18 @@ function updateDate(offset) {
         <div class="number">${monthDay}</div>
     `;
     
-    // Fetch new schedule for the selected date
-    fetchAmionData(currentDisplayDate)
-        .then(teams => {
-            updateScheduleDisplay(teams || {});
-        })
-        .catch(error => {
-            console.error('Error fetching schedule:', error);
-            updateScheduleDisplay({});
-        });
+    // Fetch both schedules
+    Promise.all([
+        fetchAmionData(currentDisplayDate),
+        fetchChurchillData(currentDisplayDate)
+    ]).then(([teams, churchillAttendings]) => {
+        updateScheduleDisplay(teams || {});
+        updateChurchillAttendingDisplay(churchillAttendings);
+    }).catch(error => {
+        console.error('Error fetching schedules:', error);
+        updateScheduleDisplay({});
+        updateChurchillAttendingDisplay(null);
+    });
 }
 
 async function fetchAmionData(date) {
@@ -174,6 +252,86 @@ function parseAmionCSV(csvText) {
     return teams;
 }
 
+async function fetchChurchillData(date) {
+    try {
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear(); // Note: No year offset for Churchill URL
+        
+        console.log(`Fetching Churchill schedule for ${month}/${day}/${year}`);
+        const response = await fetch(`/api/churchill?day=${day}&month=${month}&year=${year}`);
+        const csvText = await response.text();
+        console.log('Received Churchill CSV data:', csvText);
+        return parseChurchillCSV(csvText);
+    } catch (error) {
+        console.error('Error fetching Churchill data:', error);
+        return null;
+    }
+}
+
+function parseChurchillCSV(csvText) {
+    console.log('Starting Churchill CSV parsing');
+    const lines = csvText.split('\n');
+    const attendings = {
+        day: null,
+        night: null,
+        backup: null,
+        pancreatitis: null
+    };
+    
+    // Skip header lines
+    const dataLines = lines.slice(5);
+    
+    dataLines.forEach(line => {
+        if (!line.trim()) return;
+        
+        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        if (!parts || parts.length < 4) return;
+        
+        const [name, , , role] = parts.map(p => p.replace(/"/g, '').trim());
+        
+        // Match roles to their respective positions
+        if (role === 'Churchill Day') {
+            attendings.day = name;
+        } else if (role === 'Churchill Night') {
+            attendings.night = name;
+        } else if (role === 'Backup') {
+            attendings.backup = name;
+        } else if (role === 'Pancreatitis') {
+            attendings.pancreatitis = name;
+        }
+    });
+    
+    console.log('Parsed Churchill attendings:', attendings);
+    return attendings;
+}
+
+function updateChurchillAttendingDisplay(attendings) {
+    if (!attendings) {
+        const placeholderText = 'Not Available';
+        document.getElementById('churchill-day-attending').textContent = placeholderText;
+        document.getElementById('churchill-night-attending').textContent = placeholderText;
+        document.getElementById('churchill-backup').textContent = placeholderText;
+        document.getElementById('churchill-pancreatitis').textContent = placeholderText;
+        return;
+    }
+
+    document.getElementById('churchill-day-attending').textContent = attendings.day || 'Not Available';
+    document.getElementById('churchill-night-attending').textContent = attendings.night || 'Not Available';
+    document.getElementById('churchill-backup').textContent = attendings.backup || 'Not Available';
+    document.getElementById('churchill-pancreatitis').textContent = attendings.pancreatitis || 'Not Available';
+}
+
+function findTeamMember(teams, role) {
+    if (!teams || typeof teams !== 'object') return null;
+    
+    const entry = Object.entries(teams).find(([teamRole, members]) => 
+        teamRole.toLowerCase() === role.toLowerCase()
+    );
+    
+    return entry ? entry[1][0]?.name : null;
+}
+
 function updateScheduleDisplay(teams) {
     console.log('Updating display with teams:', teams);
     
@@ -181,13 +339,17 @@ function updateScheduleDisplay(teams) {
     const pitSection = document.getElementById('pit-team-grid');
     const bakerSection = document.getElementById('baker-team-grid');
     const churchillSection = document.getElementById('churchill-team-grid');
+    const thoracicsSection = document.getElementById('thoracics-team-grid');
+    const vascularSection = document.getElementById('vascular-team-grid');
     const unavailableMessage = document.getElementById('schedule-unavailable');
     const pitTeamSection = document.getElementById('pit-team-section');
     const bakerTeamSection = document.getElementById('baker-team-section');
     const churchillTeamSection = document.getElementById('churchill-team-section');
+    const thoracicsTeamSection = document.getElementById('thoracics-section');
+    const vascularTeamSection = document.getElementById('vascular-section');
     
-    if (!pitSection || !bakerSection || !churchillSection || !unavailableMessage || 
-        !pitTeamSection || !bakerTeamSection || !churchillTeamSection) {
+    if (!pitSection || !bakerSection || !churchillSection || !thoracicsSection || !vascularSection || !unavailableMessage || 
+        !pitTeamSection || !bakerTeamSection || !churchillTeamSection || !thoracicsTeamSection || !vascularTeamSection) {
         console.error('Could not find required containers');
         return;
     }
@@ -199,6 +361,8 @@ function updateScheduleDisplay(teams) {
         pitTeamSection.style.display = 'none';
         bakerTeamSection.style.display = 'none';
         churchillTeamSection.style.display = 'none';
+        thoracicsTeamSection.style.display = 'none';
+        vascularTeamSection.style.display = 'none';
         return;
     }
 
@@ -207,11 +371,120 @@ function updateScheduleDisplay(teams) {
     pitTeamSection.style.display = 'block';
     bakerTeamSection.style.display = 'block';
     churchillTeamSection.style.display = 'block';
+    thoracicsTeamSection.style.display = 'block';
+    vascularTeamSection.style.display = 'block';
 
     // Clear existing content
     pitSection.innerHTML = '';
     bakerSection.innerHTML = '';
     churchillSection.innerHTML = '';
+    thoracicsSection.innerHTML = '';
+    vascularSection.innerHTML = '';
+
+    // Process thoracics team members
+    const thoracicsDay = document.createElement('div');
+    thoracicsDay.className = 'team-card';
+    
+    const thoracicsDayTitle = document.createElement('h4');
+    thoracicsDayTitle.textContent = 'Day';
+    thoracicsDay.appendChild(thoracicsDayTitle);
+
+    // Create Night Card
+    const thoracicsNight = document.createElement('div');
+    thoracicsNight.className = 'team-card night-card';
+    
+    const thoracicsNightTitle = document.createElement('h4');
+    thoracicsNightTitle.textContent = 'Night';
+    thoracicsNight.appendChild(thoracicsNightTitle);
+
+    // Find thoracics team members
+    Object.entries(teams).forEach(([role, members]) => {
+        if (role.toLowerCase().includes('thoracic')) {
+            const member = members[0]; // Get first member
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'team-member';
+            
+            // Determine role label and card placement
+            let roleLabel;
+            if (role.toLowerCase().includes('consult')) {
+                roleLabel = 'Consult';
+            } else if (role.toLowerCase().includes('intern')) {
+                roleLabel = 'Intern';
+            } else if (role.toLowerCase().includes('night float')) {
+                roleLabel = 'Night Float';
+            }
+            
+            memberDiv.innerHTML = `
+                <span class="member-role">${roleLabel}</span>
+                <span class="member-name">${member.name}</span>
+                <span class="member-time">${member.time}</span>
+            `;
+            
+            // Add to appropriate card
+            if (role.toLowerCase().includes('night float')) {
+                thoracicsNight.appendChild(memberDiv);
+            } else {
+                thoracicsDay.appendChild(memberDiv);
+            }
+        }
+    });
+
+    // Clear existing content and append new cards
+    thoracicsSection.innerHTML = '';
+    thoracicsSection.appendChild(thoracicsDay);
+    thoracicsSection.appendChild(thoracicsNight);
+
+    // Process vascular team members
+    const vascularDay = document.createElement('div');
+    vascularDay.className = 'team-card';
+    
+    const vascularDayTitle = document.createElement('h4');
+    vascularDayTitle.textContent = 'Day';
+    vascularDay.appendChild(vascularDayTitle);
+
+    // Create Night Card
+    const vascularNight = document.createElement('div');
+    vascularNight.className = 'team-card night-card';
+    
+    const vascularNightTitle = document.createElement('h4');
+    vascularNightTitle.textContent = 'Night';
+    vascularNight.appendChild(vascularNightTitle);
+
+    // Find vascular team members
+    Object.entries(teams).forEach(([role, members]) => {
+        if (role.toLowerCase().includes('vascular')) {
+            const member = members[0]; // Get first member
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'team-member';
+            
+            // Skip pager entries and night consult entries
+            if (role.toLowerCase().includes('pager') || 
+                (role.toLowerCase().includes('consult') && role.toLowerCase().includes('night'))) {
+                return;
+            }
+            
+            // Determine role label and card placement
+            let roleLabel;
+            if (role.toLowerCase().includes('night float')) {
+                roleLabel = 'Night Float';
+                vascularNight.appendChild(memberDiv);
+            } else if (role.toLowerCase().includes('consult resident day')) {
+                roleLabel = 'Consult';
+                vascularDay.appendChild(memberDiv);
+            } else {
+                return; // Skip any other entries
+            }
+            
+            memberDiv.innerHTML = `
+                <span class="member-role">${roleLabel}</span>
+                <span class="member-name">${member.name}</span>
+                <span class="member-time">${member.time}</span>
+            `;
+        }
+    });
+    
+    vascularSection.appendChild(vascularDay);
+    vascularSection.appendChild(vascularNight);
 
     // Initialize team objects
     const bakerTeams = {};
@@ -317,6 +590,22 @@ function updateScheduleDisplay(teams) {
             
             const teamTitle = document.createElement('h4');
             teamTitle.textContent = `Churchill ${teamName}`;
+            
+            // Check if this team is on call
+            const onCallTeam = Object.entries(teams).find(([role, members]) => 
+                role.toLowerCase() === 'churchill team on call'
+            );
+            
+            if (onCallTeam) {
+                const onCallName = onCallTeam[1][0]?.name;
+                if (onCallName && onCallName.toLowerCase() === teamName.toLowerCase()) {
+                    const onCallBadge = document.createElement('span');
+                    onCallBadge.className = 'on-call-badge';
+                    onCallBadge.textContent = 'On Call';
+                    teamTitle.appendChild(onCallBadge);
+                }
+            }
+            
             teamCard.appendChild(teamTitle);
             
             // Sort members (Senior first, then interns)
@@ -479,6 +768,29 @@ function updateScheduleDisplay(teams) {
             
             bakerSection.appendChild(teamCard);
         });
+
+        // Add Breast team card
+        const breastTeam = Object.entries(teams).find(([role]) => role === 'Breast');
+        if (breastTeam) {
+            const breastCard = document.createElement('div');
+            breastCard.className = 'team-card';
+            
+            const breastTitle = document.createElement('h4');
+            breastTitle.textContent = 'Breast';
+            breastCard.appendChild(breastTitle);
+            
+            const member = breastTeam[1][0];
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'team-member';
+            memberDiv.innerHTML = `
+                <span class="member-role">Senior</span>
+                <span class="member-name">${member.name}</span>
+                <span class="member-time">${member.time}</span>
+            `;
+            breastCard.appendChild(memberDiv);
+            
+            bakerSection.appendChild(breastCard);
+        }
     }
 
     // Add Baker overnight card if there are overnight members
@@ -517,4 +829,24 @@ function updateScheduleDisplay(teams) {
         
         bakerSection.appendChild(overnightCard);
     }
+}
+
+function updateThoracicsSection(data) {
+    // Update thoracics team members
+    document.getElementById('thoracic-consult-resident').textContent = 
+        findTeamMember(data, 'Thoracic Consult') || 'Not assigned';
+    document.getElementById('thoracic-intern').textContent = 
+        findTeamMember(data, 'Thoracic Intern') || 'Not assigned';
+    document.getElementById('thoracic-night-float').textContent = 
+        findTeamMember(data, 'Thoracic Night Float') || 'Not assigned';
+}
+
+// Add thoracics update to the main update function
+function updateSchedule(data) {
+    // ... existing code ...
+    
+    // Update thoracics section
+    updateThoracicsSection(data);
+    
+    // ... existing code ...
 } 

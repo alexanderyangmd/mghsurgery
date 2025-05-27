@@ -87,7 +87,55 @@
 
                     <div id="churchill-team-section" class="team-section">
                         <h3>Churchill</h3>
+                        <div class="attending-banner">
+                            <div class="attending-role-row">
+                                <span class="role-label">Day Attending:</span>
+                                <span class="attending-name" id="churchill-day-attending">Loading...</span>
+                            </div>
+                            <div class="attending-role-row">
+                                <span class="role-label">Night Attending:</span>
+                                <span class="attending-name" id="churchill-night-attending">Loading...</span>
+                            </div>
+                            <div class="attending-role-row">
+                                <span class="role-label">Backup:</span>
+                                <span class="attending-name" id="churchill-backup">Loading...</span>
+                            </div>
+                            <div class="attending-role-row">
+                                <span class="role-label">Pancreatitis:</span>
+                                <span class="attending-name" id="churchill-pancreatitis">Loading...</span>
+                            </div>
+                        </div>
                         <div id="churchill-team-grid" class="team-grid"></div>
+                    </div>
+
+                    <div id="thoracics-section" class="team-section">
+                        <h3>Thoracics</h3>
+                        <div class="attending-banner">
+                            <div class="attending-role-row">
+                                <span class="role-label">Attending:</span>
+                                <span class="attending-name">[Thoracic Attending]</span>
+                            </div>
+                            <div class="attending-role-row">
+                                <span class="role-label">Fellow:</span>
+                                <span class="attending-name">[Thoracic Fellow]</span>
+                            </div>
+                        </div>
+                        <div id="thoracics-team-grid" class="team-grid"></div>
+                    </div>
+
+                    <div id="vascular-section" class="team-section">
+                        <h3>Vascular</h3>
+                        <div class="attending-banner">
+                            <div class="attending-role-row">
+                                <span class="role-label">Attending:</span>
+                                <span class="attending-name">[Vascular Attending]</span>
+                            </div>
+                            <div class="attending-role-row">
+                                <span class="role-label">Fellow:</span>
+                                <span class="attending-name">[Vascular Fellow]</span>
+                            </div>
+                        </div>
+                        <div id="vascular-team-grid" class="team-grid"></div>
                     </div>
                 </div>
             </div>
@@ -123,9 +171,40 @@
                     </div>
                 </div>
                 <div class="content-body">
-                    <div class="placeholder-message">
-                        <i class="ri-phone-line"></i>
-                        <p>Contact information will be added here</p>
+                    <div class="phone-directory">
+                        <div class="category-tabs">
+                            <button class="tab-button active" data-category="all">All</button>
+                            <button class="tab-button" data-category="attending">Attending</button>
+                            <button class="tab-button" data-category="resident">Residents</button>
+                            <button class="tab-button" data-category="app">APPs</button>
+                            <button class="tab-button" data-category="other">Other</button>
+                        </div>
+                        
+                        <div class="phone-lists">
+                            <!-- Attending Section -->
+                            <div class="phone-category" id="attending-numbers">
+                                <h3>Attending Surgeons</h3>
+                                <div class="phone-grid"></div>
+                            </div>
+
+                            <!-- Residents Section -->
+                            <div class="phone-category" id="resident-numbers">
+                                <h3>Residents</h3>
+                                <div class="phone-grid"></div>
+                            </div>
+
+                            <!-- APPs Section -->
+                            <div class="phone-category" id="app-numbers">
+                                <h3>APPs</h3>
+                                <div class="phone-grid"></div>
+                            </div>
+
+                            <!-- Other Numbers Section -->
+                            <div class="phone-category" id="other-numbers">
+                                <h3>Other Important Numbers</h3>
+                                <div class="phone-grid"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

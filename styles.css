@@ -198,6 +198,18 @@ body {
     font-weight: 450;
     color: #111827;
     margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.on-call-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 400;
 }
 
 .team-member {
@@ -333,6 +345,194 @@ body {
 }
 
 .night-card {
-    background-color: white;
-    border-left: 4px solid #6B7280;
+    background-color: #F8F9FA;
+    border-left: 4px solid #4B5563;
+}
+
+/* Phone Directory Styles */
+.phone-directory {
+    margin-top: 16px;
+}
+
+.category-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.tab-button {
+    padding: 6px 16px;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    color: #6B7280;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+    background-color: #F3F4F6;
+}
+
+.tab-button.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.phone-category {
+    margin-bottom: 32px;
+}
+
+.phone-category h3 {
+    font-size: 1rem;
+    color: #111827;
+    margin-bottom: 16px;
+}
+
+.phone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.phone-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.phone-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.contact-info {
+    flex: 1;
+}
+
+.contact-name {
+    font-size: 0.85rem;
+    font-weight: 450;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.contact-role {
+    font-size: 0.75rem;
+    color: #6B7280;
+}
+
+.phone-number {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    font-weight: 450;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .category-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 12px;
+    }
+
+    .tab-button {
+        white-space: nowrap;
+    }
+
+    .phone-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .phone-card {
+        padding: 16px;
+    }
+
+    .contact-name {
+        font-size: 0.9rem;
+    }
+
+    .contact-role {
+        font-size: 0.8rem;
+    }
+
+    .phone-number {
+        font-size: 0.9rem;
+    }
+}
+
+.attending-banner {
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.attending-role-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.role-label {
+    font-size: 0.75rem;
+    color: #6B7280;
+    min-width: 100px;
+    font-weight: var(--font-weight-medium);
+}
+
+.attending-name {
+    font-size: 0.85rem;
+    color: #111827;
+}
+
+/* Thoracics specific styles */
+#thoracics-section .team-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+#thoracics-section .team-card:not(.night-card) {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+#thoracics-section .team-member {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#thoracics-section .team-member:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .attending-role-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .role-label {
+        min-width: auto;
+    }
 } 
