@@ -46,6 +46,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
             return False
 
     def handle_api_request(self):
+        # Check authentication for all API requests
+        auth_header = self.headers.get('Authorization')
+        if not auth_header or not self.verify_password(auth_header):
+            self.send_response(401)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Unauthorized'}).encode())
+            return
+
         # Extract date parameters from the request
         if '?' in self.path:
             base_path, params = self.path.split('?', 1)

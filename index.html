@@ -262,8 +262,21 @@
                 if (data.success) {
                     document.getElementById('login-container').classList.add('hidden');
                     document.getElementById('main-content').classList.remove('hidden');
-                    // Store login state
+                    // Store login state and password
                     sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('authToken', btoa(':' + password));
+                    // Load initial schedule after successful login
+                    Promise.all([
+                        fetchAmionData(currentDisplayDate),
+                        fetchChurchillData(currentDisplayDate)
+                    ]).then(([teams, churchillAttendings]) => {
+                        updateScheduleDisplay(teams || {});
+                        updateChurchillAttendingDisplay(churchillAttendings);
+                    }).catch(error => {
+                        console.error('Error fetching schedules:', error);
+                        updateScheduleDisplay({});
+                        updateChurchillAttendingDisplay(null);
+                    });
                 } else {
                     errorMessage.textContent = 'Incorrect password';
                 }
@@ -273,16 +286,53 @@
         }
 
         // Check if already logged in
-        window.onload = function() {
-            // Clear any existing login state
-            sessionStorage.removeItem('isLoggedIn');
-            
+        window.onload = async function() {
             const loginContainer = document.getElementById('login-container');
             const mainContent = document.getElementById('main-content');
+            const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+            const authToken = sessionStorage.getItem('authToken');
             
-            // Always show login page on fresh load
-            loginContainer.classList.remove('hidden');
-            mainContent.classList.add('hidden');
+            if (isLoggedIn && authToken) {
+                // Verify the stored token
+                try {
+                    const response = await fetch('/verify', {
+                        headers: {
+                            'Authorization': 'Basic ' + authToken
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        loginContainer.classList.add('hidden');
+                        mainContent.classList.remove('hidden');
+                        // Load initial schedule after verifying stored token
+                        Promise.all([
+                            fetchAmionData(currentDisplayDate),
+                            fetchChurchillData(currentDisplayDate)
+                        ]).then(([teams, churchillAttendings]) => {
+                            updateScheduleDisplay(teams || {});
+                            updateChurchillAttendingDisplay(churchillAttendings);
+                        }).catch(error => {
+                            console.error('Error fetching schedules:', error);
+                            updateScheduleDisplay({});
+                            updateChurchillAttendingDisplay(null);
+                        });
+                    } else {
+                        // Token is invalid, clear storage and show login
+                        sessionStorage.removeItem('isLoggedIn');
+                        sessionStorage.removeItem('authToken');
+                        loginContainer.classList.remove('hidden');
+                        mainContent.classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error verifying token:', error);
+                    loginContainer.classList.remove('hidden');
+                    mainContent.classList.add('hidden');
+                }
+            } else {
+                loginContainer.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+            }
 
             // Handle enter key press
             document.getElementById('password').addEventListener('keypress', function(event) {

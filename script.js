@@ -71,19 +71,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initial load of schedules with current date
-    Promise.all([
-        fetchAmionData(currentDisplayDate),
-        fetchChurchillData(currentDisplayDate)
-    ]).then(([teams, churchillAttendings]) => {
-        updateScheduleDisplay(teams || {});
-        updateChurchillAttendingDisplay(churchillAttendings);
-    }).catch(error => {
-        console.error('Error fetching schedules:', error);
-        updateScheduleDisplay({});
-        updateChurchillAttendingDisplay(null);
-    });
-
     // Phone Directory Functionality
     const tabButtons = document.querySelectorAll('.tab-button');
     const phoneGrids = document.querySelectorAll('.phone-grid');
@@ -205,7 +192,12 @@ async function fetchAmionData(date) {
         const year = date.getFullYear() - 1; // Subtract 1 from year for Amion's URL format
         
         console.log(`Fetching schedule for ${month}/${day}/${year+1} (using year=${year} in URL)`);
-        const response = await fetch(`/api/schedule?day=${day}&month=${month}&year=${year}`);
+        const authToken = sessionStorage.getItem('authToken');
+        const response = await fetch(`/api/schedule?day=${day}&month=${month}&year=${year}`, {
+            headers: {
+                'Authorization': 'Basic ' + authToken
+            }
+        });
         const csvText = await response.text();
         console.log('Received CSV data:', csvText);
         return parseAmionCSV(csvText);
@@ -259,7 +251,12 @@ async function fetchChurchillData(date) {
         const year = date.getFullYear(); // Note: No year offset for Churchill URL
         
         console.log(`Fetching Churchill schedule for ${month}/${day}/${year}`);
-        const response = await fetch(`/api/churchill?day=${day}&month=${month}&year=${year}`);
+        const authToken = sessionStorage.getItem('authToken');
+        const response = await fetch(`/api/churchill?day=${day}&month=${month}&year=${year}`, {
+            headers: {
+                'Authorization': 'Basic ' + authToken
+            }
+        });
         const csvText = await response.text();
         console.log('Received Churchill CSV data:', csvText);
         return parseChurchillCSV(csvText);
