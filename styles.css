@@ -1,5 +1,5 @@
 :root {
-    --primary-color: #00A3E0;
+    --primary-color: #008cb2;
     --text-color: #333333;
     --background-color: #FFFFFF;
     --border-color: #E5E7EB;
@@ -30,6 +30,7 @@ body {
 .dashboard {
     display: flex;
     min-height: 100vh;
+    width: 100%;
 }
 
 /* Sidebar Styles */
@@ -40,6 +41,7 @@ body {
     position: fixed;
     height: 100vh;
     overflow-y: auto;
+    z-index: 1;
 }
 
 .sidebar-header {
@@ -80,7 +82,7 @@ body {
 
 .sidebar-nav li.active a {
     background-color: #F3F4F6;
-    color: var(--primary-color);
+    color: #008cb2;
 }
 
 .sidebar-nav a:hover {
@@ -89,10 +91,16 @@ body {
 
 /* Main Content Styles */
 .main-content {
-    flex: 1;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #F9FAFB;
+}
+
+.content-wrapper {
     margin-left: var(--sidebar-width);
     min-height: 100vh;
     background-color: #F9FAFB;
+    width: calc(100% - var(--sidebar-width));
 }
 
 .content-header {
@@ -118,7 +126,7 @@ body {
 }
 
 .refresh-icon {
-    color: var(--primary-color);
+    color: #008cb2;
     cursor: pointer;
 }
 
@@ -163,7 +171,7 @@ body {
 }
 
 .nav-arrow {
-    color: var(--primary-color);
+    color: #008cb2;
     cursor: pointer;
     font-size: 1.1rem;
 }
@@ -204,7 +212,7 @@ body {
 }
 
 .on-call-badge {
-    background-color: var(--primary-color);
+    background-color: #008cb2;
     color: white;
     padding: 2px 6px;
     border-radius: 4px;
@@ -227,7 +235,7 @@ body {
 
 .member-role {
     font-size: 0.64rem;
-    color: var(--primary-color);
+    color: #008cb2;
     font-weight: 400;
 }
 
@@ -378,7 +386,7 @@ body {
 }
 
 .tab-button.active {
-    background-color: var(--primary-color);
+    background-color: #008cb2;
     color: white;
 }
 
@@ -410,7 +418,7 @@ body {
 }
 
 .phone-card:hover {
-    border-color: var(--primary-color);
+    border-color: #008cb2;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -432,7 +440,7 @@ body {
 
 .phone-number {
     font-size: 0.85rem;
-    color: var(--primary-color);
+    color: #008cb2;
     font-weight: 450;
 }
 
@@ -535,4 +543,84 @@ body {
     .role-label {
         min-width: auto;
     }
+}
+
+/* Login page styles */
+.login-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #F9FAFB;
+    z-index: 9999;
+}
+
+.login-logo {
+    width: 150px;
+    margin-bottom: 0px;
+}
+
+.login-box {
+    background: transparent;
+    padding: 32px 32px 12px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    border: none;
+    box-shadow: none;
+}
+
+.login-box h1 {
+    font-size: 1.3rem;
+    margin-bottom: 40px;
+    color: #008cb2;
+    font-weight: 400;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.password-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 100%;
+    background: white;
+}
+
+.login-button {
+    background: #008cb2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: var(--font-weight-medium);
+    transition: background-color 0.2s;
+}
+
+.login-button:hover {
+    background: #007a9e;
+}
+
+.error-message {
+    color: #008cb2;
+    margin-top: 12px;
+    font-size: 0.85rem;
+}
+
+.hidden {
+    display: none !important;
 } 

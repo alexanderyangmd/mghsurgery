@@ -1,100 +1,121 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.request
-import urllib.parse
-from urllib.error import URLError
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
+import urllib.request
+import csv
+from io import StringIO
 from datetime import datetime
-import ssl
 import os
+import base64
 
-class RequestHandler(BaseHTTPRequestHandler):
-    def send_file(self, filename, content_type='text/html'):
-        try:
-            with open(filename, 'rb') as f:
-                content = f.read()
-                self.send_response(200)
-                self.send_header('Content-type', content_type)
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(content)
-        except FileNotFoundError:
-            self.send_response(404)
-            self.end_headers()
+# Password for authentication
+PASSWORD = "mgh"
 
+class RequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        # Parse URL and query parameters
-        parsed_path = urllib.parse.urlparse(self.path)
-        query_params = urllib.parse.parse_qs(parsed_path.query)
-
-        # Handle static files and root path
-        if parsed_path.path == '/' or parsed_path.path == '/index.html':
-            return self.send_file('index.html')
-        elif parsed_path.path.endswith('.css'):
-            return self.send_file(parsed_path.path[1:], 'text/css')
-        elif parsed_path.path.endswith('.js'):
-            return self.send_file(parsed_path.path[1:], 'application/javascript')
-        
-        # Set CORS headers for API routes
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-
-        # Extract date parameters
-        day = query_params.get('day', [''])[0]
-        month = query_params.get('month', [''])[0]
-        year = query_params.get('year', [''])[0]
-
-        try:
-            if parsed_path.path == '/api/schedule':
-                # For mghsurgery URL, we need to use the previous year (2024) to get 2025 schedule
-                amion_url = f'http://www.amion.com/cgi-bin/ocs?Lo=mghsurgery1811&Rpt=619&Day={day}&Month={month}&Year=2024'
-            elif parsed_path.path == '/api/churchill':
-                # For Churchill URL, use the current year (2025)
-                amion_url = f'http://www.amion.com/cgi-bin/ocs?Lo=Churchill&Rpt=619&Day={day}&Month={month}&Year=2025'
-            else:
-                self.send_response(404)
+        # Check if the request is for the login verification
+        if self.path == '/verify':
+            auth_header = self.headers.get('Authorization')
+            if auth_header and self.verify_password(auth_header):
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
                 self.end_headers()
+                self.wfile.write(json.dumps({'success': True}).encode())
+                return
+            else:
+                self.send_response(401)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False}).encode())
                 return
 
-            print(f'Fetching data from: {amion_url}')
+        # Handle API endpoints
+        if self.path.startswith('/api/'):
+            self.handle_api_request()
+            return
+
+        # For all other requests, serve static files
+        return SimpleHTTPRequestHandler.do_GET(self)
+
+    def verify_password(self, auth_header):
+        try:
+            encoded_credentials = auth_header.split(' ')[1]
+            decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8')
+            password = decoded_credentials.split(':')[1]
+            return password == PASSWORD
+        except:
+            return False
+
+    def handle_api_request(self):
+        # Extract date parameters from the request
+        if '?' in self.path:
+            base_path, params = self.path.split('?', 1)
+            params = dict(param.split('=') for param in params.split('&'))
+            day = params.get('day', datetime.now().strftime('%d'))
+            month = params.get('month', datetime.now().strftime('%m'))
+            year = params.get('year', datetime.now().strftime('%Y'))
+        else:
+            base_path = self.path
+            day = datetime.now().strftime('%d')
+            month = datetime.now().strftime('%m')
+            year = datetime.now().strftime('%Y')
+
+        # Handle different API endpoints
+        if base_path == '/api/schedule':
+            self.handle_schedule_request(day, month, year)
+        elif base_path == '/api/churchill':
+            self.handle_churchill_request(day, month, year)
+        else:
+            self.send_error(404)
+
+    def handle_schedule_request(self, day, month, year):
+        try:
+            url = f'http://www.amion.com/cgi-bin/ocs?Lo=mghsurgery1811&Rpt=619&Day={day}&Month={month}&Year={year}'
+            print(f"Fetching data from: {url}")
             
-            # Create SSL context that ignores certificate verification
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-            
-            # Make the request to Amion
-            with urllib.request.urlopen(amion_url, context=context) as response:
+            with urllib.request.urlopen(url) as response:
                 data = response.read().decode('utf-8')
-                print('Received CSV data:', data)
-                self.wfile.write(data.encode())
-
-        except URLError as e:
-            print(f'Error fetching data: {e}')
-            self.send_response(500)
+                print("Received CSV data:", data[:200] + "..." if len(data) > 200 else data)
+                
+            self.send_response(200)
+            self.send_header('Content-type', 'text/csv')
             self.end_headers()
-            self.wfile.write(b'Error fetching schedule data')
+            self.wfile.write(data.encode())
+            
         except Exception as e:
-            print(f'Unexpected error: {e}')
-            self.send_response(500)
-            self.end_headers()
-            self.wfile.write(b'Internal server error')
+            print(f"Error fetching schedule: {e}")
+            self.send_error(500)
 
-def run(server_class=HTTPServer, handler_class=RequestHandler, port=8000):
+    def handle_churchill_request(self, day, month, year):
+        try:
+            url = f'http://www.amion.com/cgi-bin/ocs?Lo=Churchill&Rpt=619&Day={day}&Month={month}&Year={year}'
+            print(f"Fetching data from: {url}")
+            
+            with urllib.request.urlopen(url) as response:
+                data = response.read().decode('utf-8')
+                print("Received CSV data:", data)
+                
+            self.send_response(200)
+            self.send_header('Content-type', 'text/csv')
+            self.end_headers()
+            self.wfile.write(data.encode())
+            
+        except Exception as e:
+            print(f"Error fetching Churchill schedule: {e}")
+            self.send_error(500)
+
+def run_server():
+    port = 8000
     server_address = ('', port)
+    
     try:
-        httpd = server_class(server_address, handler_class)
-        print(f'Starting server on port {port}...')
+        httpd = HTTPServer(server_address, RequestHandler)
+        print(f"Starting server on port {port}...")
         httpd.serve_forever()
     except OSError as e:
         if e.errno == 48:  # Address already in use
-            print(f'Error: Port {port} is already in use. Try killing the existing process or using a different port.')
+            print(f"Error: Port {port} is already in use. Try killing the existing process or using a different port.")
         else:
-            print(f'Error starting server: {e}')
-    except KeyboardInterrupt:
-        print('\nShutting down server...')
-        httpd.server_close()
+            print(f"Error starting server: {e}")
 
 if __name__ == '__main__':
-    run() 
+    run_server() 

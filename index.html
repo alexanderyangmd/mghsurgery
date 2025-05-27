@@ -3,233 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MGH Surgery</title>
+    <title>MGH Surgery Call Schedule</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h1>MGH Surgery</h1>
+    <div id="login-container" class="login-container">
+        <img src="images/mghlogo.png" alt="MGH Logo" class="login-logo">
+        <div class="login-box">
+            <h1>Department of Surgery</h1>
+            <div class="password-form">
+                <input type="password" id="password" placeholder="Enter password" class="password-input">
+                <button onclick="login()" class="login-button">Login</button>
             </div>
-            <nav class="sidebar-nav">
-                <ul>
-                    <li class="active">
-                        <a href="#on-call">
-                            <i class="ri-calendar-line"></i>
-                            On Call
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#attending-preferences">
-                            <i class="ri-user-settings-line"></i>
-                            Attending Preferences
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#useful-numbers">
-                            <i class="ri-phone-line"></i>
-                            Useful Numbers
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#resources">
-                            <i class="ri-folder-line"></i>
-                            Resources
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
-
-        <main class="main-content">
-            <!-- On Call Section -->
-            <div id="on-call" class="page active">
-                <div class="content-header">
-                    <div class="header-left">
-                        <h2>On-Call Schedule</h2>
-                        <div class="last-updated">
-                            Last Updated: 12:21:01 PM
-                            <i class="ri-refresh-line refresh-icon"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="content-body">
-                    <div class="date-navigation">
-                        <i class="ri-arrow-left-s-line nav-arrow"></i>
-                        <div class="date">
-                            <div class="day">TUESDAY</div>
-                            <div class="number">May 27</div>
-                        </div>
-                        <i class="ri-arrow-right-s-line nav-arrow"></i>
-                    </div>
-
-                    <div id="schedule-unavailable" class="schedule-unavailable" style="display: none;">
-                        <i class="ri-information-line"></i>
-                        <p>Call Schedule Unavailable</p>
-                    </div>
-
-                    <!-- Pit Team Section -->
-                    <section class="team-section" id="pit-team-section">
-                        <h3>Pit Team</h3>
-                        <div class="team-grid" id="pit-team-grid">
-                            <!-- Team cards will be inserted here -->
-                        </div>
-                    </section>
-
-                    <!-- Baker Teams Section -->
-                    <section class="team-section" id="baker-team-section">
-                        <h3>Baker</h3>
-                        <div id="baker-team-grid" class="team-grid"></div>
-                    </section>
-
-                    <div id="churchill-team-section" class="team-section">
-                        <h3>Churchill</h3>
-                        <div class="attending-banner">
-                            <div class="attending-role-row">
-                                <span class="role-label">Day Attending:</span>
-                                <span class="attending-name" id="churchill-day-attending">Loading...</span>
-                            </div>
-                            <div class="attending-role-row">
-                                <span class="role-label">Night Attending:</span>
-                                <span class="attending-name" id="churchill-night-attending">Loading...</span>
-                            </div>
-                            <div class="attending-role-row">
-                                <span class="role-label">Backup:</span>
-                                <span class="attending-name" id="churchill-backup">Loading...</span>
-                            </div>
-                            <div class="attending-role-row">
-                                <span class="role-label">Pancreatitis:</span>
-                                <span class="attending-name" id="churchill-pancreatitis">Loading...</span>
-                            </div>
-                        </div>
-                        <div id="churchill-team-grid" class="team-grid"></div>
-                    </div>
-
-                    <div id="thoracics-section" class="team-section">
-                        <h3>Thoracics</h3>
-                        <div class="attending-banner">
-                            <div class="attending-role-row">
-                                <span class="role-label">Attending:</span>
-                                <span class="attending-name">[Thoracic Attending]</span>
-                            </div>
-                            <div class="attending-role-row">
-                                <span class="role-label">Fellow:</span>
-                                <span class="attending-name">[Thoracic Fellow]</span>
-                            </div>
-                        </div>
-                        <div id="thoracics-team-grid" class="team-grid"></div>
-                    </div>
-
-                    <div id="vascular-section" class="team-section">
-                        <h3>Vascular</h3>
-                        <div class="attending-banner">
-                            <div class="attending-role-row">
-                                <span class="role-label">Attending:</span>
-                                <span class="attending-name">[Vascular Attending]</span>
-                            </div>
-                            <div class="attending-role-row">
-                                <span class="role-label">Fellow:</span>
-                                <span class="attending-name">[Vascular Fellow]</span>
-                            </div>
-                        </div>
-                        <div id="vascular-team-grid" class="team-grid"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Attending Preferences Section -->
-            <div id="attending-preferences" class="page">
-                <div class="content-header">
-                    <div class="header-left">
-                        <h2>Attending Preferences</h2>
-                        <div class="last-updated">
-                            Last Updated: 12:21:01 PM
-                            <i class="ri-refresh-line refresh-icon"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="content-body">
-                    <div class="placeholder-message">
-                        <i class="ri-user-settings-line"></i>
-                        <p>Attending preferences content will be added here</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Useful Numbers Section -->
-            <div id="useful-numbers" class="page">
-                <div class="content-header">
-                    <div class="header-left">
-                        <h2>Useful Numbers</h2>
-                        <div class="last-updated">
-                            Last Updated: 12:21:01 PM
-                            <i class="ri-refresh-line refresh-icon"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="content-body">
-                    <div class="phone-directory">
-                        <div class="category-tabs">
-                            <button class="tab-button active" data-category="all">All</button>
-                            <button class="tab-button" data-category="attending">Attending</button>
-                            <button class="tab-button" data-category="resident">Residents</button>
-                            <button class="tab-button" data-category="app">APPs</button>
-                            <button class="tab-button" data-category="other">Other</button>
-                        </div>
-                        
-                        <div class="phone-lists">
-                            <!-- Attending Section -->
-                            <div class="phone-category" id="attending-numbers">
-                                <h3>Attending Surgeons</h3>
-                                <div class="phone-grid"></div>
-                            </div>
-
-                            <!-- Residents Section -->
-                            <div class="phone-category" id="resident-numbers">
-                                <h3>Residents</h3>
-                                <div class="phone-grid"></div>
-                            </div>
-
-                            <!-- APPs Section -->
-                            <div class="phone-category" id="app-numbers">
-                                <h3>APPs</h3>
-                                <div class="phone-grid"></div>
-                            </div>
-
-                            <!-- Other Numbers Section -->
-                            <div class="phone-category" id="other-numbers">
-                                <h3>Other Important Numbers</h3>
-                                <div class="phone-grid"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Resources Section -->
-            <div id="resources" class="page">
-                <div class="content-header">
-                    <div class="header-left">
-                        <h2>Resources</h2>
-                        <div class="last-updated">
-                            Last Updated: 12:21:01 PM
-                            <i class="ri-refresh-line refresh-icon"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="content-body">
-                    <div class="placeholder-message">
-                        <i class="ri-folder-line"></i>
-                        <p>Resources and documents will be added here</p>
-                    </div>
-                </div>
-            </div>
-        </main>
+            <div id="error-message" class="error-message"></div>
+        </div>
     </div>
 
+    <div id="main-content" class="main-content hidden">
+        <div class="dashboard">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h1>MGH Surgery</h1>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li class="active">
+                            <a href="#on-call">
+                                <i class="ri-calendar-line"></i>
+                                On Call
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#attending-preferences">
+                                <i class="ri-user-settings-line"></i>
+                                Attending Preferences
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#useful-numbers">
+                                <i class="ri-phone-line"></i>
+                                Useful Numbers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#resources">
+                                <i class="ri-folder-line"></i>
+                                Resources
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <div class="content-wrapper">
+                <!-- On Call Section -->
+                <div id="on-call" class="page active">
+                    <div class="content-header">
+                        <div class="header-left">
+                            <h2>On-Call Schedule</h2>
+                            <div class="last-updated">
+                                Last Updated: 12:21:01 PM
+                                <i class="ri-refresh-line refresh-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-body">
+                        <div class="date-navigation">
+                            <i class="ri-arrow-left-s-line nav-arrow"></i>
+                            <div class="date">
+                                <div class="day">TUESDAY</div>
+                                <div class="number">May 27</div>
+                            </div>
+                            <i class="ri-arrow-right-s-line nav-arrow"></i>
+                        </div>
+
+                        <div id="schedule-unavailable" class="schedule-unavailable" style="display: none;">
+                            <i class="ri-information-line"></i>
+                            <p>Call Schedule Unavailable</p>
+                        </div>
+
+                        <!-- Pit Team Section -->
+                        <section class="team-section" id="pit-team-section">
+                            <h3>Pit Team</h3>
+                            <div class="team-grid" id="pit-team-grid">
+                                <!-- Team cards will be inserted here -->
+                            </div>
+                        </section>
+
+                        <!-- Baker Teams Section -->
+                        <section class="team-section" id="baker-team-section">
+                            <h3>Baker</h3>
+                            <div id="baker-team-grid" class="team-grid"></div>
+                        </section>
+
+                        <div id="churchill-team-section" class="team-section">
+                            <h3>Churchill</h3>
+                            <div class="attending-banner">
+                                <div class="attending-role-row">
+                                    <span class="role-label">Day Attending:</span>
+                                    <span class="attending-name" id="churchill-day-attending">Loading...</span>
+                                </div>
+                                <div class="attending-role-row">
+                                    <span class="role-label">Night Attending:</span>
+                                    <span class="attending-name" id="churchill-night-attending">Loading...</span>
+                                </div>
+                                <div class="attending-role-row">
+                                    <span class="role-label">Backup:</span>
+                                    <span class="attending-name" id="churchill-backup">Loading...</span>
+                                </div>
+                                <div class="attending-role-row">
+                                    <span class="role-label">Pancreatitis:</span>
+                                    <span class="attending-name" id="churchill-pancreatitis">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="churchill-team-grid" class="team-grid"></div>
+                        </div>
+
+                        <div id="thoracics-section" class="team-section">
+                            <h3>Thoracics</h3>
+                            <div class="attending-banner">
+                                <div class="attending-role-row">
+                                    <span class="role-label">Attending:</span>
+                                    <span class="attending-name">[Thoracic Attending]</span>
+                                </div>
+                                <div class="attending-role-row">
+                                    <span class="role-label">Fellow:</span>
+                                    <span class="attending-name">[Thoracic Fellow]</span>
+                                </div>
+                            </div>
+                            <div id="thoracics-team-grid" class="team-grid"></div>
+                        </div>
+
+                        <div id="vascular-section" class="team-section">
+                            <h3>Vascular</h3>
+                            <div class="attending-banner">
+                                <div class="attending-role-row">
+                                    <span class="role-label">Attending:</span>
+                                    <span class="attending-name">[Vascular Attending]</span>
+                                </div>
+                                <div class="attending-role-row">
+                                    <span class="role-label">Fellow:</span>
+                                    <span class="attending-name">[Vascular Fellow]</span>
+                                </div>
+                            </div>
+                            <div id="vascular-team-grid" class="team-grid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attending Preferences Section -->
+                <div id="attending-preferences" class="page">
+                    <div class="content-header">
+                        <div class="header-left">
+                            <h2>Attending Preferences</h2>
+                            <div class="last-updated">
+                                Last Updated: 12:21:01 PM
+                                <i class="ri-refresh-line refresh-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-body">
+                        <div class="placeholder-message">
+                            <i class="ri-user-settings-line"></i>
+                            <p>Attending preferences content will be added here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Useful Numbers Section -->
+                <div id="useful-numbers" class="page">
+                    <div class="content-header">
+                        <div class="header-left">
+                            <h2>Useful Numbers</h2>
+                            <div class="last-updated">
+                                Last Updated: 12:21:01 PM
+                                <i class="ri-refresh-line refresh-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-body">
+                        <div class="phone-directory">
+                            <div class="category-tabs">
+                                <button class="tab-button active" data-category="all">All</button>
+                                <button class="tab-button" data-category="attending">Attending</button>
+                                <button class="tab-button" data-category="resident">Residents</button>
+                                <button class="tab-button" data-category="app">APPs</button>
+                                <button class="tab-button" data-category="other">Other</button>
+                            </div>
+                            
+                            <div class="phone-lists">
+                                <!-- Attending Section -->
+                                <div class="phone-category" id="attending-numbers">
+                                    <h3>Attending Surgeons</h3>
+                                    <div class="phone-grid"></div>
+                                </div>
+
+                                <!-- Residents Section -->
+                                <div class="phone-category" id="resident-numbers">
+                                    <h3>Residents</h3>
+                                    <div class="phone-grid"></div>
+                                </div>
+
+                                <!-- APPs Section -->
+                                <div class="phone-category" id="app-numbers">
+                                    <h3>APPs</h3>
+                                    <div class="phone-grid"></div>
+                                </div>
+
+                                <!-- Other Numbers Section -->
+                                <div class="phone-category" id="other-numbers">
+                                    <h3>Other Important Numbers</h3>
+                                    <div class="phone-grid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resources Section -->
+                <div id="resources" class="page">
+                    <div class="content-header">
+                        <div class="header-left">
+                            <h2>Resources</h2>
+                            <div class="last-updated">
+                                Last Updated: 12:21:01 PM
+                                <i class="ri-refresh-line refresh-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-body">
+                        <div class="placeholder-message">
+                            <i class="ri-folder-line"></i>
+                            <p>Resources and documents will be added here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Login functionality
+        async function login() {
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            try {
+                const response = await fetch('/verify', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(':' + password)
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('login-container').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    // Store login state
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                } else {
+                    errorMessage.textContent = 'Incorrect password';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'An error occurred. Please try again.';
+            }
+        }
+
+        // Check if already logged in
+        window.onload = function() {
+            // Clear any existing login state
+            sessionStorage.removeItem('isLoggedIn');
+            
+            const loginContainer = document.getElementById('login-container');
+            const mainContent = document.getElementById('main-content');
+            
+            // Always show login page on fresh load
+            loginContainer.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+
+            // Handle enter key press
+            document.getElementById('password').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    login();
+                }
+            });
+        };
+    </script>
     <script src="script.js"></script>
 </body>
 </html> 
