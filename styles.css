@@ -20,10 +20,11 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
-    font-size: 14px;
+    font-size: 12px;
     font-weight: var(--font-weight-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    line-height: 1.4;
 }
 
 .dashboard {
@@ -47,8 +48,8 @@ body {
 }
 
 .sidebar-header h1 {
-    font-size: 1.1rem;
-    font-weight: var(--font-weight-semibold);
+    font-size: 1.3rem;
+    font-weight: 500;
     color: var(--text-color);
 }
 
@@ -101,7 +102,7 @@ body {
 }
 
 .header-left h2 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: var(--font-weight-semibold);
     color: #111827;
     margin-bottom: 2px;
@@ -152,12 +153,12 @@ body {
     color: #6B7280;
     text-transform: uppercase;
     margin-bottom: 2px;
-    font-weight: var(--font-weight-normal);
+    font-weight: 500;
 }
 
 .date-navigation .number {
-    font-size: 1.25rem;
-    font-weight: var(--font-weight-semibold);
+    font-size: 1rem;
+    font-weight: 450;
     color: #111827;
 }
 
@@ -173,38 +174,39 @@ body {
 }
 
 .team-section h3 {
-    font-size: 1.1rem;
-    font-weight: var(--font-weight-semibold);
+    font-size: 1rem;
+    font-weight: 500;
     color: #111827;
     margin-bottom: 12px;
 }
 
 .team-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
 }
 
 .team-card {
     background: white;
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 16px;
+    padding: 12px;
 }
 
 .team-card h4 {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.76rem;
+    font-weight: 450;
     color: #111827;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .team-member {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
+    padding: 4px 0;
     border-bottom: 1px solid var(--border-color);
+    font-size: 0.68rem;
 }
 
 .team-member:last-child {
@@ -212,19 +214,20 @@ body {
 }
 
 .member-role {
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     color: var(--primary-color);
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .member-name {
-    font-size: 0.8rem;
+    font-size: 0.68rem;
     color: #111827;
+    font-weight: 450;
 }
 
 .member-time {
-    font-size: 0.8rem;
-    color: #6B7280;
+    font-size: 0.6rem;
+    color: #666;
 }
 
 /* Day/Night Toggle */

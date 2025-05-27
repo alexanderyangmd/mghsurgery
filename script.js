@@ -180,11 +180,14 @@ function updateScheduleDisplay(teams) {
     // Get the containers
     const pitSection = document.getElementById('pit-team-grid');
     const bakerSection = document.getElementById('baker-team-grid');
+    const churchillSection = document.getElementById('churchill-team-grid');
     const unavailableMessage = document.getElementById('schedule-unavailable');
     const pitTeamSection = document.getElementById('pit-team-section');
     const bakerTeamSection = document.getElementById('baker-team-section');
+    const churchillTeamSection = document.getElementById('churchill-team-section');
     
-    if (!pitSection || !bakerSection || !unavailableMessage || !pitTeamSection || !bakerTeamSection) {
+    if (!pitSection || !bakerSection || !churchillSection || !unavailableMessage || 
+        !pitTeamSection || !bakerTeamSection || !churchillTeamSection) {
         console.error('Could not find required containers');
         return;
     }
@@ -195,6 +198,7 @@ function updateScheduleDisplay(teams) {
         unavailableMessage.style.display = 'flex';
         pitTeamSection.style.display = 'none';
         bakerTeamSection.style.display = 'none';
+        churchillTeamSection.style.display = 'none';
         return;
     }
 
@@ -202,10 +206,151 @@ function updateScheduleDisplay(teams) {
     unavailableMessage.style.display = 'none';
     pitTeamSection.style.display = 'block';
     bakerTeamSection.style.display = 'block';
+    churchillTeamSection.style.display = 'block';
 
     // Clear existing content
     pitSection.innerHTML = '';
     bakerSection.innerHTML = '';
+    churchillSection.innerHTML = '';
+
+    // Initialize team objects
+    const bakerTeams = {};
+    const bakerOvernight = {
+        title: 'Baker Overnight',
+        members: []
+    };
+    const bakerWeekendDay = {
+        title: 'Baker Day',
+        members: []
+    };
+    const churchillTeams = {
+        'Red': [],
+        'White': [],
+        'Green': [],
+        'Overnight': []
+    };
+    let isWeekendSchedule = false;
+
+    // First pass: organize members into teams
+    Object.entries(teams).forEach(([role, members]) => {
+        const roleLower = role.toLowerCase();
+        
+        // Process Baker teams
+        if (roleLower.includes('baker')) {
+            // Check for weekend schedule indicators
+            if (roleLower.includes('weekend') || roleLower.includes('holiday')) {
+                isWeekendSchedule = true;
+                
+                // Sort into Day vs Overnight
+                if (roleLower.includes('night float') || roleLower.includes('overnight') || 
+                    roleLower.includes('boss')) {
+                    bakerOvernight.members.push(...members);
+                } else {
+                    // Map weekend roles to standardized display names
+                    members.forEach(member => {
+                        const memberCopy = { ...member };
+                        if (roleLower.includes('on call')) {
+                            memberCopy.role = 'On Call Senior';
+                        } else if (roleLower.includes('rounding')) {
+                            memberCopy.role = 'Rounding Senior';
+                        } else if (roleLower.includes('intern long')) {
+                            memberCopy.role = 'Long Intern';
+                        } else if (roleLower.includes('intern short')) {
+                            memberCopy.role = 'Short Intern';
+                        }
+                        bakerWeekendDay.members.push(memberCopy);
+                    });
+                }
+            } else if (roleLower.includes('night float') || roleLower.includes('overnight') || 
+                      roleLower.includes('boss')) {
+                bakerOvernight.members.push(...members);
+            } else {
+                // Regular weekday team handling
+                const match = roleLower.match(/baker\s*(\d+[ab]?)/i);
+                if (match) {
+                    let teamNumber = match[1];
+                    if (teamNumber.endsWith('a') || teamNumber.endsWith('b')) {
+                        teamNumber = teamNumber.slice(0, -1) + teamNumber.slice(-1).toUpperCase();
+                    }
+                    
+                    if (!bakerTeams[teamNumber]) {
+                        bakerTeams[teamNumber] = [];
+                    }
+                    bakerTeams[teamNumber].push(...members);
+                }
+            }
+        }
+        
+        // Process Churchill teams
+        if (roleLower.includes('churchill') || roleLower.includes('cnf')) {
+            members.forEach(member => {
+                // Track members already added to overnight team
+                const memberKey = `${member.name}-${member.time}`;
+                
+                if ((roleLower.includes('night') || roleLower.includes('cnf'))) {
+                    // For overnight team, check if this member is already added
+                    if (!churchillTeams['Overnight'].some(m => `${m.name}-${m.time}` === memberKey)) {
+                        churchillTeams['Overnight'].push(member);
+                    }
+                } else {
+                    // Determine which Churchill team
+                    if (roleLower.includes('red')) {
+                        churchillTeams['Red'].push(member);
+                    } else if (roleLower.includes('white')) {
+                        churchillTeams['White'].push(member);
+                    } else if (roleLower.includes('green')) {
+                        churchillTeams['Green'].push(member);
+                    }
+                }
+            });
+        }
+    });
+
+    // Display Churchill teams
+    Object.entries(churchillTeams).forEach(([teamName, members]) => {
+        if (members.length > 0) {
+            const teamCard = document.createElement('div');
+            teamCard.className = 'team-card';
+            if (teamName === 'Overnight') {
+                teamCard.className += ' night-card';
+            }
+            
+            const teamTitle = document.createElement('h4');
+            teamTitle.textContent = `Churchill ${teamName}`;
+            teamCard.appendChild(teamTitle);
+            
+            // Sort members (Senior first, then interns)
+            members.sort((a, b) => {
+                const aIsSenior = a.role.toLowerCase().includes('senior') || 
+                                a.role.toLowerCase().includes('chief');
+                const bIsSenior = b.role.toLowerCase().includes('senior') || 
+                                b.role.toLowerCase().includes('chief');
+                return bIsSenior - aIsSenior;
+            });
+            
+            members.forEach(member => {
+                const memberDiv = document.createElement('div');
+                memberDiv.className = 'team-member';
+                
+                // Determine role label
+                let roleLabel = 'Senior';
+                if (member.role.toLowerCase().includes('intern')) {
+                    roleLabel = 'Intern';
+                } else if (member.role.toLowerCase().includes('cnf chief')) {
+                    roleLabel = 'Senior';
+                }
+                
+                memberDiv.innerHTML = `
+                    <span class="member-role">${roleLabel}</span>
+                    <span class="member-name">${member.name}</span>
+                    <span class="member-time">${member.time}</span>
+                `;
+                teamCard.appendChild(memberDiv);
+            });
+            
+            churchillSection.appendChild(teamCard);
+        }
+    });
 
     // Process and display Pit Team members
     const pitTeamMembers = Object.entries(teams)
@@ -256,82 +401,87 @@ function updateScheduleDisplay(teams) {
         pitSection.appendChild(pitNightCard);
     }
 
-    // Process and display Baker Teams
-    const bakerTeams = {};
-    const bakerOvernight = {
-        title: 'Baker Overnight',
-        members: []
-    };
-
-    // First pass: organize members into teams
-    Object.entries(teams).forEach(([role, members]) => {
-        if (role.toLowerCase().includes('baker')) {
-            if (role.toLowerCase().includes('night float') || role.toLowerCase().includes('overnight')) {
-                bakerOvernight.members.push(...members);
-            } else {
-                // Extract Baker team number and type, normalizing the format
-                const match = role.toLowerCase().match(/baker\s*(\d+[ab]?)/i);
-                if (match) {
-                    // Normalize the team number format (e.g., "3b" becomes "3B")
-                    let teamNumber = match[1];
-                    if (teamNumber.endsWith('a') || teamNumber.endsWith('b')) {
-                        teamNumber = teamNumber.slice(0, -1) + teamNumber.slice(-1).toUpperCase();
-                    }
-                    
-                    if (!bakerTeams[teamNumber]) {
-                        bakerTeams[teamNumber] = [];
-                    }
-                    bakerTeams[teamNumber].push(...members);
-                }
+    // Display Baker teams based on schedule type
+    if (isWeekendSchedule) {
+        // Display weekend schedule
+        if (bakerWeekendDay.members.length > 0) {
+            const dayCard = document.createElement('div');
+            dayCard.className = 'team-card';
+            
+            const dayTitle = document.createElement('h4');
+            dayTitle.textContent = bakerWeekendDay.title;
+            dayCard.appendChild(dayTitle);
+            
+            // Sort members by role priority
+            const rolePriority = {
+                'On Call Senior': 1,
+                'Rounding Senior': 2,
+                'Long Intern': 3,
+                'Short Intern': 4
+            };
+            
+            bakerWeekendDay.members.sort((a, b) => 
+                (rolePriority[a.role] || 99) - (rolePriority[b.role] || 99)
+            );
+            
+            bakerWeekendDay.members.forEach(member => {
+                const memberDiv = document.createElement('div');
+                memberDiv.className = 'team-member';
+                memberDiv.innerHTML = `
+                    <span class="member-role">${member.role}</span>
+                    <span class="member-name">${member.name}</span>
+                    <span class="member-time">${member.time}</span>
+                `;
+                dayCard.appendChild(memberDiv);
+            });
+            
+            bakerSection.appendChild(dayCard);
+        }
+    } else {
+        // Regular weekday display logic
+        const sortedTeamNumbers = Object.keys(bakerTeams).sort((a, b) => {
+            const aBase = parseInt(a.match(/\d+/)[0]);
+            const bBase = parseInt(b.match(/\d+/)[0]);
+            
+            if (aBase === bBase) {
+                return a.includes('A') ? -1 : a.includes('B') ? 1 : 0;
             }
-        }
-    });
-
-    // Sort and display Baker teams
-    const sortedTeamNumbers = Object.keys(bakerTeams).sort((a, b) => {
-        // Convert team numbers to comparable values
-        const aBase = parseInt(a.match(/\d+/)[0]);
-        const bBase = parseInt(b.match(/\d+/)[0]);
-        
-        if (aBase === bBase) {
-            // If numbers are the same, sort A before B
-            return a.includes('A') ? -1 : a.includes('B') ? 1 : 0;
-        }
-        return aBase - bBase;
-    });
-
-    // Create and append Baker team cards
-    sortedTeamNumbers.forEach(teamNumber => {
-        const teamCard = document.createElement('div');
-        teamCard.className = 'team-card';
-        
-        const teamTitle = document.createElement('h4');
-        teamTitle.textContent = `Baker ${teamNumber}`;
-        teamCard.appendChild(teamTitle);
-        
-        // Sort members (Chief first, then others)
-        bakerTeams[teamNumber].sort((a, b) => {
-            const aIsChief = a.role.toLowerCase().includes('chief');
-            const bIsChief = b.role.toLowerCase().includes('chief');
-            return bIsChief - aIsChief;
+            return aBase - bBase;
         });
 
-        bakerTeams[teamNumber].forEach(member => {
-            const memberDiv = document.createElement('div');
-            memberDiv.className = 'team-member';
-            const roleLabel = member.role.toLowerCase().includes('chief') ? 'Chief' : 'Intern';
-            memberDiv.innerHTML = `
-                <span class="member-role">${roleLabel}</span>
-                <span class="member-name">${member.name}</span>
-                <span class="member-time">${member.time}</span>
-            `;
-            teamCard.appendChild(memberDiv);
+        // Create and append Baker team cards
+        sortedTeamNumbers.forEach(teamNumber => {
+            const teamCard = document.createElement('div');
+            teamCard.className = 'team-card';
+            
+            const teamTitle = document.createElement('h4');
+            teamTitle.textContent = `Baker ${teamNumber}`;
+            teamCard.appendChild(teamTitle);
+            
+            // Sort members (Chief first, then others)
+            bakerTeams[teamNumber].sort((a, b) => {
+                const aIsChief = a.role.toLowerCase().includes('chief');
+                const bIsChief = b.role.toLowerCase().includes('chief');
+                return bIsChief - aIsChief;
+            });
+            
+            bakerTeams[teamNumber].forEach(member => {
+                const memberDiv = document.createElement('div');
+                memberDiv.className = 'team-member';
+                const roleLabel = member.role.toLowerCase().includes('chief') ? 'Chief' : 'Intern';
+                memberDiv.innerHTML = `
+                    <span class="member-role">${roleLabel}</span>
+                    <span class="member-name">${member.name}</span>
+                    <span class="member-time">${member.time}</span>
+                `;
+                teamCard.appendChild(memberDiv);
+            });
+            
+            bakerSection.appendChild(teamCard);
         });
-        
-        bakerSection.appendChild(teamCard);
-    });
+    }
 
-    // Add Baker Overnight card if there are overnight members
+    // Add Baker overnight card if there are overnight members
     if (bakerOvernight.members.length > 0) {
         const overnightCard = document.createElement('div');
         overnightCard.className = 'team-card night-card';
@@ -340,17 +490,23 @@ function updateScheduleDisplay(teams) {
         overnightTitle.textContent = bakerOvernight.title;
         overnightCard.appendChild(overnightTitle);
         
-        // Sort overnight members (BOSS first, then night float)
+        // Sort members to ensure BOSS is first
         bakerOvernight.members.sort((a, b) => {
             const aIsBoss = a.role.toLowerCase().includes('boss');
             const bIsBoss = b.role.toLowerCase().includes('boss');
             return bIsBoss - aIsBoss;
         });
-
+        
         bakerOvernight.members.forEach(member => {
             const memberDiv = document.createElement('div');
             memberDiv.className = 'team-member';
-            const roleLabel = member.role.toLowerCase().includes('boss') ? 'Senior' : 'Night Float';
+            
+            // Simplify role labels
+            let roleLabel = 'Intern';
+            if (member.role.toLowerCase().includes('boss')) {
+                roleLabel = 'BOSS';
+            }
+            
             memberDiv.innerHTML = `
                 <span class="member-role">${roleLabel}</span>
                 <span class="member-name">${member.name}</span>

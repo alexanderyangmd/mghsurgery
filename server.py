@@ -2,6 +2,13 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 import requests
 from urllib.parse import urlparse, parse_qs
 import sys
+import signal
+import socket
+import os
+import json
+import urllib.request
+import csv
+from io import StringIO
 
 class RequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -42,12 +49,39 @@ class RequestHandler(SimpleHTTPRequestHandler):
         """Log messages to stderr."""
         print(f"{self.address_string()} - - [{self.log_date_time_string()}] {format%args}", file=sys.stderr)
 
-if __name__ == "__main__":
+def signal_handler(sig, frame):
+    print('\nShutting down server...')
     try:
-        server_address = ("", 8000)
+        httpd.server_close()
+    except:
+        pass
+    sys.exit(0)
+
+if __name__ == '__main__':
+    server_address = ('', 8000)
+    
+    # Allow socket reuse
+    HTTPServer.allow_reuse_address = True
+    
+    try:
         httpd = HTTPServer(server_address, RequestHandler)
-        print(f"Server running on port {server_address[1]}...", file=sys.stderr)
+        print(f'Starting server on port {server_address[1]}...')
+        
+        # Set up signal handlers
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        
         httpd.serve_forever()
-    except Exception as e:
-        print(f"Server error: {str(e)}", file=sys.stderr)
-        sys.exit(1) 
+    except OSError as e:
+        if e.errno == 48:  # Address already in use
+            print('Port 8000 is in use. Attempting to kill existing process...')
+            os.system('lsof -i :8000 | grep LISTEN | awk \'{print $2}\' | xargs kill -9 2>/dev/null')
+            print('Retrying server start...')
+            httpd = HTTPServer(server_address, RequestHandler)
+            httpd.serve_forever()
+        else:
+            raise
+    except KeyboardInterrupt:
+        print('\nShutting down server...')
+        httpd.server_close()
+        sys.exit(0) 
