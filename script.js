@@ -338,28 +338,33 @@ function updateScheduleDisplay(teams) {
     const churchillSection = document.getElementById('churchill-team-grid');
     const thoracicsSection = document.getElementById('thoracics-team-grid');
     const vascularSection = document.getElementById('vascular-team-grid');
+    const pediatricsSection = document.getElementById('pediatrics-team-grid');
+    const transplantSection = document.getElementById('transplant-team-grid');
     const unavailableMessage = document.getElementById('schedule-unavailable');
     const pitTeamSection = document.getElementById('pit-team-section');
     const bakerTeamSection = document.getElementById('baker-team-section');
     const churchillTeamSection = document.getElementById('churchill-team-section');
     const thoracicsTeamSection = document.getElementById('thoracics-section');
     const vascularTeamSection = document.getElementById('vascular-section');
+    const pediatricsTeamSection = document.getElementById('pediatrics-section');
+    const transplantTeamSection = document.getElementById('transplant-section');
     
-    if (!pitSection || !bakerSection || !churchillSection || !thoracicsSection || !vascularSection || !unavailableMessage || 
-        !pitTeamSection || !bakerTeamSection || !churchillTeamSection || !thoracicsTeamSection || !vascularTeamSection) {
+    if (!pitSection || !bakerSection || !churchillSection || !thoracicsSection || !vascularSection || !pediatricsSection || !transplantSection || !unavailableMessage || 
+        !pitTeamSection || !bakerTeamSection || !churchillTeamSection || !thoracicsTeamSection || !vascularTeamSection || !pediatricsTeamSection || !transplantTeamSection) {
         console.error('Could not find required containers');
         return;
     }
 
     // If no teams data or empty teams object
     if (!teams || Object.keys(teams).length === 0) {
-        // Show unavailable message and hide team sections
         unavailableMessage.style.display = 'flex';
         pitTeamSection.style.display = 'none';
         bakerTeamSection.style.display = 'none';
         churchillTeamSection.style.display = 'none';
         thoracicsTeamSection.style.display = 'none';
         vascularTeamSection.style.display = 'none';
+        pediatricsTeamSection.style.display = 'none';
+        transplantTeamSection.style.display = 'none';
         return;
     }
 
@@ -370,6 +375,8 @@ function updateScheduleDisplay(teams) {
     churchillTeamSection.style.display = 'block';
     thoracicsTeamSection.style.display = 'block';
     vascularTeamSection.style.display = 'block';
+    pediatricsTeamSection.style.display = 'block';
+    transplantTeamSection.style.display = 'block';
 
     // Clear existing content
     pitSection.innerHTML = '';
@@ -377,6 +384,57 @@ function updateScheduleDisplay(teams) {
     churchillSection.innerHTML = '';
     thoracicsSection.innerHTML = '';
     vascularSection.innerHTML = '';
+    pediatricsSection.innerHTML = '';
+    transplantSection.innerHTML = '';
+
+    // Process pediatrics team members
+    const pediatricsDay = document.createElement('div');
+    pediatricsDay.className = 'team-card';
+    
+    const pediatricsDayTitle = document.createElement('h4');
+    pediatricsDayTitle.textContent = 'Day';
+    pediatricsDay.appendChild(pediatricsDayTitle);
+
+    const pediatricsNight = document.createElement('div');
+    pediatricsNight.className = 'team-card night-card';
+    
+    const pediatricsNightTitle = document.createElement('h4');
+    pediatricsNightTitle.textContent = 'Night';
+    pediatricsNight.appendChild(pediatricsNightTitle);
+
+    // Find pediatrics team members
+    Object.entries(teams).forEach(([role, members]) => {
+        if (role.toLowerCase().includes('pedi')) {
+            const member = members[0]; // Get first member
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'team-member';
+            
+            // Determine role label and card placement
+            let roleLabel;
+            if (role.toLowerCase().includes('senior')) {
+                roleLabel = 'Senior';
+            } else if (role.toLowerCase().includes('intern')) {
+                roleLabel = 'Intern';
+            }
+            
+            memberDiv.innerHTML = `
+                <span class="member-role">${roleLabel}</span>
+                <span class="member-name">${member.name}</span>
+                <span class="member-time">${member.time}</span>
+            `;
+            
+            // Add to appropriate card
+            if (role.toLowerCase().includes('night')) {
+                pediatricsNight.appendChild(memberDiv);
+            } else {
+                pediatricsDay.appendChild(memberDiv);
+            }
+        }
+    });
+
+    // Add cards to pediatrics section
+    pediatricsSection.appendChild(pediatricsDay);
+    pediatricsSection.appendChild(pediatricsNight);
 
     // Process thoracics team members
     const thoracicsDay = document.createElement('div');
@@ -482,6 +540,57 @@ function updateScheduleDisplay(teams) {
     
     vascularSection.appendChild(vascularDay);
     vascularSection.appendChild(vascularNight);
+
+    // Process transplant team members
+    const transplantDay = document.createElement('div');
+    transplantDay.className = 'team-card';
+    
+    const transplantDayTitle = document.createElement('h4');
+    transplantDayTitle.textContent = 'Day';
+    transplantDay.appendChild(transplantDayTitle);
+
+    const transplantNight = document.createElement('div');
+    transplantNight.className = 'team-card night-card';
+    
+    const transplantNightTitle = document.createElement('h4');
+    transplantNightTitle.textContent = 'Night';
+    transplantNight.appendChild(transplantNightTitle);
+
+    // Find transplant team members
+    Object.entries(teams).forEach(([role, members]) => {
+        if (role.toLowerCase().includes('txp') || role.toLowerCase().includes('burn and transplant')) {
+            const member = members[0]; // Get first member
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'team-member';
+            
+            // Determine role label and card placement
+            let roleLabel;
+            if (role.toLowerCase().includes('senior')) {
+                roleLabel = 'Senior';
+            } else if (role.toLowerCase().includes('intern')) {
+                roleLabel = 'Intern';
+            } else if (role.toLowerCase().includes('burn and transplant night')) {
+                roleLabel = 'Senior';
+            }
+            
+            memberDiv.innerHTML = `
+                <span class="member-role">${roleLabel}</span>
+                <span class="member-name">${member.name}</span>
+                <span class="member-time">${member.time}</span>
+            `;
+            
+            // Add to appropriate card
+            if (role.toLowerCase().includes('night')) {
+                transplantNight.appendChild(memberDiv);
+            } else {
+                transplantDay.appendChild(memberDiv);
+            }
+        }
+    });
+
+    // Add cards to transplant section
+    transplantSection.appendChild(transplantDay);
+    transplantSection.appendChild(transplantNight);
 
     // Initialize team objects
     const bakerTeams = {};
@@ -825,6 +934,26 @@ function updateScheduleDisplay(teams) {
         });
         
         bakerSection.appendChild(overnightCard);
+    }
+
+    // Show/hide sections based on content
+    if (pitTeamSection) pitTeamSection.style.display = pitSection.children.length > 0 ? 'block' : 'none';
+    if (bakerTeamSection) bakerTeamSection.style.display = bakerSection.children.length > 0 ? 'block' : 'none';
+    if (churchillTeamSection) churchillTeamSection.style.display = churchillSection.children.length > 0 ? 'block' : 'none';
+    if (thoracicsTeamSection) thoracicsTeamSection.style.display = thoracicsSection.children.length > 0 ? 'block' : 'none';
+    if (vascularTeamSection) vascularTeamSection.style.display = vascularSection.children.length > 0 ? 'block' : 'none';
+    if (pediatricsTeamSection) pediatricsTeamSection.style.display = pediatricsSection.children.length > 0 ? 'block' : 'none';
+    if (transplantTeamSection) transplantTeamSection.style.display = transplantSection.children.length > 0 ? 'block' : 'none';
+
+    // Show unavailable message if no teams are displayed
+    if (unavailableMessage) {
+        const anyTeamsVisible = [
+            pitTeamSection, bakerTeamSection, churchillTeamSection,
+            thoracicsTeamSection, vascularTeamSection, pediatricsTeamSection,
+            transplantTeamSection
+        ].some(section => section && section.style.display === 'block');
+
+        unavailableMessage.style.display = anyTeamsVisible ? 'none' : 'block';
     }
 }
 
