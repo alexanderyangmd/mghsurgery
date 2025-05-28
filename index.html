@@ -135,12 +135,12 @@
                             <h3>Vascular</h3>
                             <div class="attending-banner">
                                 <div class="attending-role-row">
-                                    <span class="role-label">Attending:</span>
-                                    <span class="attending-name">[Vascular Attending]</span>
+                                    <span class="role-label">On-Call Attending:</span>
+                                    <span class="attending-name" id="vascular-attending">Loading...</span>
                                 </div>
                                 <div class="attending-role-row">
-                                    <span class="role-label">Fellow:</span>
-                                    <span class="attending-name">[Vascular Fellow]</span>
+                                    <span class="role-label">On-Call Fellow:</span>
+                                    <span class="attending-name" id="vascular-fellow">Loading...</span>
                                 </div>
                             </div>
                             <div id="vascular-team-grid" class="team-grid"></div>
@@ -150,11 +150,11 @@
                             <h3>Thoracics</h3>
                             <div class="attending-banner">
                                 <div class="attending-role-row">
-                                    <span class="role-label">Attending:</span>
+                                    <span class="role-label">On-Call Attending:</span>
                                     <span class="attending-name">[Thoracic Attending]</span>
                                 </div>
                                 <div class="attending-role-row">
-                                    <span class="role-label">Fellow:</span>
+                                    <span class="role-label">On-Call Fellow:</span>
                                     <span class="attending-name">[Thoracic Fellow]</span>
                                 </div>
                             </div>
@@ -276,17 +276,9 @@
                     sessionStorage.setItem('isLoggedIn', 'true');
                     sessionStorage.setItem('authToken', btoa(':' + password));
                     // Load initial schedule after successful login
-                    Promise.all([
-                        fetchAmionData(currentDisplayDate),
-                        fetchChurchillData(currentDisplayDate)
-                    ]).then(([teams, churchillAttendings]) => {
-                        updateScheduleDisplay(teams || {});
-                        updateChurchillAttendingDisplay(churchillAttendings);
-                    }).catch(error => {
-                        console.error('Error fetching schedules:', error);
-                        updateScheduleDisplay({});
-                        updateChurchillAttendingDisplay(null);
-                    });
+                    loadAllSchedules();
+                    // Dispatch auth success event
+                    window.dispatchEvent(new Event('auth-success'));
                 } else {
                     errorMessage.textContent = 'Incorrect password';
                 }
@@ -316,17 +308,9 @@
                         loginContainer.classList.add('hidden');
                         mainContent.classList.remove('hidden');
                         // Load initial schedule after verifying stored token
-                        Promise.all([
-                            fetchAmionData(currentDisplayDate),
-                            fetchChurchillData(currentDisplayDate)
-                        ]).then(([teams, churchillAttendings]) => {
-                            updateScheduleDisplay(teams || {});
-                            updateChurchillAttendingDisplay(churchillAttendings);
-                        }).catch(error => {
-                            console.error('Error fetching schedules:', error);
-                            updateScheduleDisplay({});
-                            updateChurchillAttendingDisplay(null);
-                        });
+                        loadAllSchedules();
+                        // Dispatch auth success event
+                        window.dispatchEvent(new Event('auth-success'));
                     } else {
                         // Token is invalid, clear storage and show login
                         sessionStorage.removeItem('isLoggedIn');

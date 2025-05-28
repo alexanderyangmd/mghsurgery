@@ -1,9 +1,55 @@
 // Track the currently displayed date globally
 let currentDisplayDate = new Date();
-// Set year to current year since future schedules don't exist
-currentDisplayDate.setFullYear(new Date().getFullYear());
+
+// Function to load all schedules
+async function loadAllSchedules() {
+    try {
+        // Check for auth token first
+        const authToken = sessionStorage.getItem('authToken');
+        if (!authToken) {
+            console.log('No auth token found, skipping schedule load');
+            updateScheduleDisplay({});
+            updateChurchillAttendingDisplay(null);
+            updateVascularAttendingDisplay(null);
+            return;
+        }
+
+        console.log('Loading all schedules for date:', currentDisplayDate);
+        const [teams, churchillAttendings, vascularAttendings] = await Promise.all([
+            fetchAmionData(currentDisplayDate),
+            fetchChurchillData(currentDisplayDate),
+            fetchVascularData(currentDisplayDate)
+        ]);
+
+        console.log('Loaded schedules:', {
+            teams: teams ? 'present' : 'missing',
+            churchill: churchillAttendings ? 'present' : 'missing',
+            vascular: vascularAttendings ? 'present' : 'missing'
+        });
+
+        updateScheduleDisplay(teams || {});
+        updateChurchillAttendingDisplay(churchillAttendings);
+        updateVascularAttendingDisplay(vascularAttendings);
+    } catch (error) {
+        console.error('Error loading schedules:', error);
+        updateScheduleDisplay({});
+        updateChurchillAttendingDisplay(null);
+        updateVascularAttendingDisplay(null);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Update the date display initially
+    const dateElement = document.querySelector('.date');
+    if (dateElement) {
+        const dayName = currentDisplayDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+        const monthDay = currentDisplayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        dateElement.innerHTML = `
+            <div class="day">${dayName}</div>
+            <div class="number">${monthDay}</div>
+        `;
+    }
+
     // Date navigation
     const prevDate = document.querySelector('.ri-arrow-left-s-line');
     const nextDate = document.querySelector('.ri-arrow-right-s-line');
@@ -32,21 +78,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     lastUpdated.textContent = `Last Updated: ${timeString}`;
                 }
                 
-                // Fetch both schedules
-                Promise.all([
-                    fetchAmionData(currentDisplayDate),
-                    fetchChurchillData(currentDisplayDate)
-                ]).then(([teams, churchillAttendings]) => {
-                    updateScheduleDisplay(teams || {});
-                    updateChurchillAttendingDisplay(churchillAttendings);
-                }).catch(error => {
-                    console.error('Error fetching schedules:', error);
-                    updateScheduleDisplay({});
-                    updateChurchillAttendingDisplay(null);
-                });
+                // Reload all schedules
+                loadAllSchedules();
             });
         });
     }
+
+    // Check for authentication and load data
+    const authToken = sessionStorage.getItem('authToken');
+    if (authToken) {
+        loadAllSchedules();
+    }
+
+    // Listen for successful authentication
+    window.addEventListener('auth-success', () => {
+        loadAllSchedules();
+    });
 
     // Navigation handling
     const navLinks = document.querySelectorAll('.sidebar-nav a');
@@ -170,25 +217,15 @@ function updateDate(offset) {
         <div class="number">${monthDay}</div>
     `;
     
-    // Fetch both schedules
-    Promise.all([
-        fetchAmionData(currentDisplayDate),
-        fetchChurchillData(currentDisplayDate)
-    ]).then(([teams, churchillAttendings]) => {
-        updateScheduleDisplay(teams || {});
-        updateChurchillAttendingDisplay(churchillAttendings);
-    }).catch(error => {
-        console.error('Error fetching schedules:', error);
-        updateScheduleDisplay({});
-        updateChurchillAttendingDisplay(null);
-    });
+    // Load all schedules
+    loadAllSchedules();
 }
 
 async function fetchAmionData(date) {
     try {
         // Format the date parameters
         const day = date.getDate();
-        const month = date.getMonth() + 1; // getMonth() returns 0-11
+        const month = date.getMonth() + 1;
         const year = date.getFullYear() - 1; // Subtract 1 from year for Amion's URL format
         
         console.log(`Fetching schedule for ${month}/${day}/${year+1} (using year=${year} in URL)`);
@@ -975,4 +1012,130 @@ function updateSchedule(data) {
     updateThoracicsSection(data);
     
     // ... existing code ...
+}
+
+async function fetchVascularData(date) {
+    try {
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear(); // No year offset needed for VascOncall!
+        
+        const authToken = sessionStorage.getItem('authToken');
+        console.log('Fetching Vascular schedule with auth token:', authToken ? 'present' : 'missing');
+        
+        if (!authToken) {
+            console.log('No auth token found, skipping vascular data fetch');
+            return null;
+        }
+        
+        console.log(`Fetching Vascular schedule for ${month}/${day}/${year}`);
+        const response = await fetch(`/api/vascular?day=${day}&month=${month}&year=${year}`, {
+            headers: {
+                'Authorization': 'Basic ' + authToken
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const csvText = await response.text();
+        if (!csvText || csvText.trim() === '') {
+            console.log('Received empty CSV data');
+            return null;
+        }
+        
+        console.log('Received Vascular CSV data:', csvText);
+        const attendings = parseVascularCSV(csvText);
+        console.log('Parsed Vascular attendings:', attendings);
+        
+        // Validate the parsed data
+        if (!attendings || (!attendings.attending && !attendings.fellow)) {
+            console.log('No valid vascular attendings found in CSV');
+            return null;
+        }
+        
+        return attendings;
+    } catch (error) {
+        console.error('Error fetching Vascular data:', error);
+        return null;
+    }
+}
+
+function parseVascularCSV(csvText) {
+    console.log('Starting Vascular CSV parsing');
+    const lines = csvText.split('\n');
+    const attendings = {
+        attending: null,
+        fellow: null
+    };
+    
+    // Skip header lines
+    const dataLines = lines.slice(5);
+    
+    dataLines.forEach(line => {
+        if (!line.trim()) return;
+        
+        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        if (!parts || parts.length < 4) {
+            console.log('Skipping invalid line:', line);
+            return;
+        }
+        
+        const [name, , , role] = parts.map(p => p.replace(/"/g, '').trim());
+        console.log('Processing line:', { name, role });
+        
+        // Match roles to their respective positions
+        if (role === 'MGH Surgeon On-Call') {
+            attendings.attending = name;
+            console.log('Found attending:', name);
+        } else if (role === 'MGH Fellow On-Call') {
+            attendings.fellow = name;
+            console.log('Found fellow:', name);
+        }
+    });
+    
+    console.log('Finished parsing, attendings:', attendings);
+    return attendings;
+}
+
+function updateVascularAttendingDisplay(attendings) {
+    console.log('Updating vascular attending display with:', attendings);
+    
+    const attendingElement = document.getElementById('vascular-attending');
+    const fellowElement = document.getElementById('vascular-fellow');
+    
+    if (!attendingElement || !fellowElement) {
+        console.error('Could not find vascular display elements');
+        return;
+    }
+    
+    if (!attendings) {
+        console.log('No attendings data, displaying Not Available');
+        attendingElement.textContent = 'Not Available';
+        fellowElement.textContent = 'Not Available';
+        return;
+    }
+
+    // Update attending - extract last name only
+    if (attendings.attending && attendings.attending.trim()) {
+        console.log('Setting attending to:', attendings.attending);
+        // Format: "First Last, MD" -> "Last"
+        const lastName = attendings.attending.split(' ')[1].split(',')[0];
+        attendingElement.textContent = lastName;
+    } else {
+        console.log('No attending found, setting to Not Available');
+        attendingElement.textContent = 'Not Available';
+    }
+
+    // Update fellow - extract last name only
+    if (attendings.fellow && attendings.fellow.trim()) {
+        console.log('Setting fellow to:', attendings.fellow);
+        // Format: "First Last, MD" -> "Last"
+        const lastName = attendings.fellow.split(' ')[1].split(',')[0];
+        fellowElement.textContent = lastName;
+    } else {
+        console.log('No fellow found, setting to Not Available');
+        fellowElement.textContent = 'Not Available';
+    }
 } 

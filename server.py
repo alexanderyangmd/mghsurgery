@@ -11,6 +11,15 @@ import base64
 PASSWORD = "mgh"
 
 class RequestHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        # Override to provide minimal logging
+        if args[0].startswith('GET /api/'):
+            print(f"{self.address_string()} - API request: {args[0]}")
+        elif args[0].startswith('GET /verify'):
+            print(f"{self.address_string()} - Verify request")
+        else:
+            print(f"{self.address_string()} - {args[0]}")
+
     def do_GET(self):
         # Check if the request is for the login verification
         if self.path == '/verify':
@@ -73,17 +82,16 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.handle_schedule_request(day, month, year)
         elif base_path == '/api/churchill':
             self.handle_churchill_request(day, month, year)
+        elif base_path == '/api/vascular':
+            self.handle_vascular_request(day, month, year)
         else:
             self.send_error(404)
 
     def handle_schedule_request(self, day, month, year):
         try:
             url = f'http://www.amion.com/cgi-bin/ocs?Lo=mghsurgery1811&Rpt=619&Day={day}&Month={month}&Year={year}'
-            print(f"Fetching data from: {url}")
-            
             with urllib.request.urlopen(url) as response:
                 data = response.read().decode('utf-8')
-                print("Received CSV data:", data[:200] + "..." if len(data) > 200 else data)
                 
             self.send_response(200)
             self.send_header('Content-type', 'text/csv')
@@ -97,11 +105,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
     def handle_churchill_request(self, day, month, year):
         try:
             url = f'http://www.amion.com/cgi-bin/ocs?Lo=Churchill&Rpt=619&Day={day}&Month={month}&Year={year}'
-            print(f"Fetching data from: {url}")
-            
             with urllib.request.urlopen(url) as response:
                 data = response.read().decode('utf-8')
-                print("Received CSV data:", data)
                 
             self.send_response(200)
             self.send_header('Content-type', 'text/csv')
@@ -110,6 +115,21 @@ class RequestHandler(SimpleHTTPRequestHandler):
             
         except Exception as e:
             print(f"Error fetching Churchill schedule: {e}")
+            self.send_error(500)
+
+    def handle_vascular_request(self, day, month, year):
+        try:
+            url = f'http://www.amion.com/cgi-bin/ocs?Lo=VascOncall!&Rpt=619&Day={day}&Month={month}&Year={year}'
+            with urllib.request.urlopen(url) as response:
+                data = response.read().decode('utf-8')
+                
+            self.send_response(200)
+            self.send_header('Content-type', 'text/csv')
+            self.end_headers()
+            self.wfile.write(data.encode())
+            
+        except Exception as e:
+            print(f"Error fetching Vascular schedule: {e}")
             self.send_error(500)
 
 def run_server():
