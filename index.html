@@ -151,11 +151,11 @@
                             <div class="attending-banner">
                                 <div class="attending-role-row">
                                     <span class="role-label">On-Call Attending:</span>
-                                    <span class="attending-name">[Thoracic Attending]</span>
+                                    <span class="attending-name" id="thoracic-attending">Loading...</span>
                                 </div>
                                 <div class="attending-role-row">
                                     <span class="role-label">On-Call Fellow:</span>
-                                    <span class="attending-name">[Thoracic Fellow]</span>
+                                    <span class="attending-name" id="thoracic-fellow">Loading...</span>
                                 </div>
                             </div>
                             <div id="thoracics-team-grid" class="team-grid"></div>
@@ -277,8 +277,7 @@
                     sessionStorage.setItem('authToken', btoa(':' + password));
                     // Load initial schedule after successful login
                     loadAllSchedules();
-                    // Dispatch auth success event
-                    window.dispatchEvent(new Event('auth-success'));
+                    // Remove auth success event dispatch since we're loading directly
                 } else {
                     errorMessage.textContent = 'Incorrect password';
                 }
@@ -309,8 +308,7 @@
                         mainContent.classList.remove('hidden');
                         // Load initial schedule after verifying stored token
                         loadAllSchedules();
-                        // Dispatch auth success event
-                        window.dispatchEvent(new Event('auth-success'));
+                        // Remove auth success event dispatch
                     } else {
                         // Token is invalid, clear storage and show login
                         sessionStorage.removeItem('isLoggedIn');

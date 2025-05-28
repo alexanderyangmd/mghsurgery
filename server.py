@@ -77,15 +77,19 @@ class RequestHandler(SimpleHTTPRequestHandler):
             month = datetime.now().strftime('%m')
             year = datetime.now().strftime('%Y')
 
-        # Handle different API endpoints
         if base_path == '/api/schedule':
             self.handle_schedule_request(day, month, year)
         elif base_path == '/api/churchill':
             self.handle_churchill_request(day, month, year)
         elif base_path == '/api/vascular':
             self.handle_vascular_request(day, month, year)
+        elif base_path == '/api/thoracic':
+            self.handle_thoracic_request(day, month, year)
         else:
-            self.send_error(404)
+            self.send_response(404)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
 
     def handle_schedule_request(self, day, month, year):
         try:
@@ -131,6 +135,28 @@ class RequestHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             print(f"Error fetching Vascular schedule: {e}")
             self.send_error(500)
+
+    def handle_thoracic_request(self, day, month, year):
+        """Handle requests for thoracic schedule data"""
+        try:
+            # Construct the URL for the thoracic schedule
+            url = f'http://www.amion.com/cgi-bin/ocs?Lo=MGHThoracic&Rpt=619&Day={day}&Month={month}&Year={year}'
+            
+            print(f"Fetching data from: {url}")
+            with urllib.request.urlopen(url) as response:
+                csv_text = response.read().decode('utf-8')
+                print("Received CSV data:", csv_text.split('\n')[0])  # Print first line only
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'text/csv')
+                self.end_headers()
+                self.wfile.write(csv_text.encode())
+        except Exception as e:
+            print(f"Error fetching thoracic schedule: {str(e)}")
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
 
 def run_server():
     port = 8000
