@@ -310,7 +310,8 @@ function parseChurchillCSV(csvText) {
         day: null,
         night: null,
         backup: null,
-        pancreatitis: null
+        pancreatitis: null,
+        blueApp: []
     };
     
     // Skip header lines
@@ -320,9 +321,9 @@ function parseChurchillCSV(csvText) {
         if (!line.trim()) return;
         
         const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-        if (!parts || parts.length < 4) return;
+        if (!parts || parts.length < 9) return;
         
-        const [name, , , role] = parts.map(p => p.replace(/"/g, '').trim());
+        const [name, , , role, , , , startTime, endTime] = parts.map(p => p.replace(/"/g, '').trim());
         
         // Match roles to their respective positions
         if (role === 'Churchill Day') {
@@ -333,6 +334,11 @@ function parseChurchillCSV(csvText) {
             attendings.backup = name;
         } else if (role === 'Pancreatitis') {
             attendings.pancreatitis = name;
+        } else if (role.toLowerCase().includes('blue app')) {
+            attendings.blueApp.push({
+                name: name,
+                time: `${startTime}-${endTime}`
+            });
         }
     });
     
@@ -341,19 +347,89 @@ function parseChurchillCSV(csvText) {
 }
 
 function updateChurchillAttendingDisplay(attendings) {
+    console.log('Updating Churchill display with data:', attendings);
+    
+    // Get all elements first
+    const elements = {
+        day: document.getElementById('churchill-day-attending'),
+        night: document.getElementById('churchill-night-attending'),
+        backup: document.getElementById('churchill-backup'),
+        pancreatitis: document.getElementById('churchill-pancreatitis')
+    };
+
+    // Log the state of all elements
+    console.log('Churchill elements state:', Object.entries(elements).reduce((acc, [key, el]) => {
+        acc[key] = el ? 'found' : 'missing';
+        return acc;
+    }, {}));
+
     if (!attendings) {
+        console.log('No Churchill attendings data available');
         const placeholderText = 'Not Available';
-        document.getElementById('churchill-day-attending').textContent = placeholderText;
-        document.getElementById('churchill-night-attending').textContent = placeholderText;
-        document.getElementById('churchill-backup').textContent = placeholderText;
-        document.getElementById('churchill-pancreatitis').textContent = placeholderText;
-        return;
+        Object.values(elements).forEach(element => {
+            if (element) element.textContent = placeholderText;
+        });
+        return true;
     }
 
-    document.getElementById('churchill-day-attending').textContent = attendings.day || 'Not Available';
-    document.getElementById('churchill-night-attending').textContent = attendings.night || 'Not Available';
-    document.getElementById('churchill-backup').textContent = attendings.backup || 'Not Available';
-    document.getElementById('churchill-pancreatitis').textContent = attendings.pancreatitis || 'Not Available';
+    try {
+        // Update the display with null checks
+        if (elements.day) elements.day.textContent = attendings.day || 'Not Available';
+        if (elements.night) elements.night.textContent = attendings.night || 'Not Available';
+        if (elements.backup) elements.backup.textContent = attendings.backup || 'Not Available';
+        if (elements.pancreatitis) elements.pancreatitis.textContent = attendings.pancreatitis || 'Not Available';
+        
+        // Create or update Blue team card
+        const churchillSection = document.getElementById('churchill-team-section');
+        const teamGrid = document.getElementById('churchill-team-grid');
+        
+        if (churchillSection && teamGrid) {
+            // Remove existing Blue card if it exists
+            const existingBlueCard = teamGrid.querySelector('.team-card.blue-team');
+            if (existingBlueCard) {
+                existingBlueCard.remove();
+            }
+            
+            // Create new Blue card if there are Blue APP members
+            if (attendings.blueApp && attendings.blueApp.length > 0) {
+                console.log('Creating Blue card with members:', attendings.blueApp);
+                const blueCard = document.createElement('div');
+                blueCard.className = 'team-card';
+                
+                const blueTitle = document.createElement('h4');
+                blueTitle.textContent = 'Churchill Blue';
+                blueCard.appendChild(blueTitle);
+                
+                // Add each Blue APP member
+                attendings.blueApp.forEach(member => {
+                    const memberDiv = document.createElement('div');
+                    memberDiv.className = 'team-member';
+                    memberDiv.innerHTML = `
+                        <span class="member-role">APP</span>
+                        <span class="member-name">${member.name}</span>
+                        <span class="member-time">${member.time || '0700-1800'}</span>
+                    `;
+                    blueCard.appendChild(memberDiv);
+                });
+                
+                // Insert the Blue card between Green and Overnight cards
+                const nightCard = teamGrid.querySelector('.team-card.night-card');
+                if (nightCard) {
+                    nightCard.before(blueCard);
+                } else {
+                    teamGrid.appendChild(blueCard);
+                }
+            } else {
+                console.log('No Blue APP members found in data');
+            }
+        }
+
+        console.log('Churchill display update complete');
+        return true;
+    } catch (error) {
+        console.error('Error updating Churchill display:', error);
+        return false;
+    }
 }
 
 function findTeamMember(teams, role) {

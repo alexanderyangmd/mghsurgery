@@ -13,12 +13,34 @@ PASSWORD = "mgh"
 class RequestHandler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         # Override to provide minimal logging
-        if args[0].startswith('GET /api/'):
-            print(f"{self.address_string()} - API request: {args[0]}")
-        elif args[0].startswith('GET /verify'):
-            print(f"{self.address_string()} - Verify request")
-        else:
-            print(f"{self.address_string()} - {args[0]}")
+        try:
+            # Convert all args to strings
+            str_args = []
+            for arg in args:
+                if hasattr(arg, 'value'):  # HTTPStatus object
+                    str_args.append(str(arg.value))
+                elif hasattr(arg, 'startswith'):  # String
+                    str_args.append(str(arg))
+                else:  # Other types
+                    str_args.append(str(arg))
+            
+            # Format the message
+            try:
+                message = format % tuple(str_args)
+            except:
+                message = f"{format} {' '.join(str_args)}"
+            
+            # Log based on message content
+            if isinstance(message, str):
+                if 'GET /api/' in message:
+                    print(f"{self.address_string()} - API request: {message}")
+                elif 'GET /verify' in message:
+                    print(f"{self.address_string()} - Verify request")
+                else:
+                    print(f"{self.address_string()} - {message}")
+        except Exception as e:
+            # Fallback logging
+            print(f"{self.address_string()} - Error in logging: {e}")
 
     def do_GET(self):
         # Check if the request is for the login verification
