@@ -406,20 +406,30 @@ body {
     gap: 12px;
 }
 
+.phone-search {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
 .phone-card {
-    background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 12px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s ease;
+    align-items: flex-start;
+    padding: 15px;
+    margin: 10px 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
 }
 
 .phone-card:hover {
-    border-color: #008cb2;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .contact-info {
@@ -427,21 +437,72 @@ body {
 }
 
 .contact-name {
-    font-size: 0.85rem;
-    font-weight: 450;
-    color: #111827;
-    margin-bottom: 2px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
 }
 
 .contact-role {
-    font-size: 0.75rem;
-    color: #6B7280;
+    color: #7f8c8d;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+}
+
+.contact-email {
+    color: #3498db;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+}
+
+.contact-numbers {
+    text-align: right;
+    min-width: 140px;
 }
 
 .phone-number {
+    font-weight: 500;
+    color: #27ae60;
+    margin-bottom: 4px;
+}
+
+.pager-number {
+    color: #e67e22;
+    font-size: 0.9em;
+}
+
+.error-message {
+    color: #e74c3c;
+    text-align: center;
+    padding: 10px;
+    margin-top: 12px;
     font-size: 0.85rem;
-    color: #008cb2;
-    font-weight: 450;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.error-message.error {
+    background-color: #fdf2f1;
+    border: 1px solid #fadbd8;
+}
+
+/* Phone directory specific error message */
+.phone-grid .error-message {
+    color: #e74c3c;
+    text-align: center;
+    padding: 20px;
+    background: #fdf2f1;
+    border-radius: 4px;
+    margin: 10px 0;
+    border: 1px solid #fadbd8;
+}
+
+.no-results {
+    color: #7f8c8d;
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin: 10px 0;
 }
 
 /* Mobile Responsive Adjustments */
@@ -613,12 +674,6 @@ body {
 
 .login-button:hover {
     background: #007a9e;
-}
-
-.error-message {
-    color: #008cb2;
-    margin-top: 12px;
-    font-size: 0.85rem;
 }
 
 .hidden {

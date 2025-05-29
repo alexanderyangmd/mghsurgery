@@ -6,6 +6,9 @@ from io import StringIO
 from datetime import datetime
 import os
 import base64
+import sqlite3
+from contextlib import contextmanager
+from urllib.parse import urlparse, parse_qs
 
 # Password for authentication
 PASSWORD = "mgh"
@@ -99,6 +102,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
             month = datetime.now().strftime('%m')
             year = datetime.now().strftime('%Y')
 
+        # Clean up base path by removing trailing slashes
+        base_path = base_path.rstrip('/')
+
         if base_path == '/api/schedule':
             self.handle_schedule_request(day, month, year)
         elif base_path == '/api/churchill':
@@ -107,7 +113,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.handle_vascular_request(day, month, year)
         elif base_path == '/api/thoracic':
             self.handle_thoracic_request(day, month, year)
+        elif base_path == '/api/cardiac':
+            self.handle_cardiac_request(day, month, year)
+        elif base_path == '/api/phone/categories':
+            self.handle_phone_categories_request()
+        elif base_path == '/api/phone/contacts':
+            self.handle_phone_contacts_request()
         else:
+            print(f"404 Not Found for path: {base_path}")  # Add debug logging
             self.send_response(404)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
@@ -180,19 +193,176 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({'error': str(e)}).encode())
 
+    def handle_cardiac_request(self, day, month, year):
+        try:
+            # Don't subtract 1 from year for cardiac schedule
+            url = f'http://www.amion.com/cgi-bin/ocs?Lo=mghcs&Rpt=619&Day={day}&Month={month}&Year={year}'
+            print(f"Fetching cardiac data from: {url}")
+            
+            try:
+                response = urllib.request.urlopen(url)
+            except urllib.error.HTTPError as e:
+                print(f"HTTP Error fetching cardiac data: {e.code} - {e.reason}")
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
+                return
+            except urllib.error.URLError as e:
+                print(f"URL Error fetching cardiac data: {e.reason}")
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
+                return
+                
+            data = response.read().decode('utf-8')
+            print("Received cardiac CSV data:", data.split('\n')[0])  # Print first line only
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'text/csv')
+            self.end_headers()
+            self.wfile.write(data.encode())
+            
+        except Exception as e:
+            print(f"Error in handle_cardiac_request: {str(e)}")
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
+
+    def handle_phone_categories_request(self):
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                categories = cursor.execute('SELECT * FROM categories').fetchall()
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                # Convert rows to dictionaries
+                categories_list = [dict(zip([col[0] for col in cursor.description], row)) for row in categories]
+                self.wfile.write(json.dumps(categories_list).encode())
+        except Exception as e:
+            print(f"Error handling categories request: {str(e)}")
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
+
+    def handle_phone_contacts_request(self):
+        try:
+            # Parse query parameters
+            from urllib.parse import urlparse, parse_qs
+            parsed_url = urlparse(self.path)
+            query_params = parse_qs(parsed_url.query)
+            
+            category = query_params.get('category', [None])[0]
+            search = query_params.get('search', [None])[0]
+            
+            print(f"Phone contacts request - category: {category}, search: {search}")  # Debug log
+            
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                query = '''
+                    SELECT 
+                        c.*,
+                        cat.name as category_name,
+                        cat.display_name as category_display_name
+                    FROM contacts c
+                    JOIN categories cat ON c.category_id = cat.id
+                    WHERE c.is_active = 1
+                '''
+                params = []
+                
+                if category and category != 'all':
+                    query += ' AND cat.name = ?'
+                    params.append(category)
+                    
+                if search:
+                    query += ' AND (c.name LIKE ? OR c.role LIKE ? OR c.phone_number LIKE ?)'
+                    search_param = f'%{search}%'
+                    params.extend([search_param, search_param, search_param])
+                
+                print(f"Executing query: {query} with params: {params}")  # Debug log
+                
+                cursor.execute(query, params)
+                contacts = cursor.fetchall()
+                
+                # Convert rows to dictionaries
+                contacts_list = []
+                columns = [col[0] for col in cursor.description]
+                for row in contacts:
+                    contact_dict = dict(zip(columns, row))
+                    contacts_list.append(contact_dict)
+                
+                print(f"Found {len(contacts_list)} contacts")  # Debug log
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(contacts_list).encode())
+                
+        except Exception as e:
+            print(f"Error handling contacts request: {str(e)}")
+            print("Detailed error information:")
+            import traceback
+            traceback.print_exc()
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
+
 def run_server():
     port = 8000
     server_address = ('', port)
     
     try:
-        httpd = HTTPServer(server_address, RequestHandler)
+        # Check if port is already in use
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', port))
+        if result == 0:
+            print(f"Error: Port {port} is already in use.")
+            print("Attempting to kill existing process...")
+            import os
+            os.system('pkill -f "python3 server.py"')
+            print("Waiting for port to be released...")
+            import time
+            time.sleep(2)
+        sock.close()
+        
+        # Start server
         print(f"Starting server on port {port}...")
+        httpd = HTTPServer(server_address, RequestHandler)
+        print(f"Server is running at http://localhost:{port}")
         httpd.serve_forever()
-    except OSError as e:
-        if e.errno == 48:  # Address already in use
-            print(f"Error: Port {port} is already in use. Try killing the existing process or using a different port.")
-        else:
-            print(f"Error starting server: {e}")
+    except Exception as e:
+        print(f"Error starting server: {str(e)}")
+        print("Detailed error information:")
+        import traceback
+        traceback.print_exc()
+        
+        if isinstance(e, OSError):
+            if e.errno == 48:  # Address already in use
+                print(f"\nPort {port} is already in use.")
+                print("Try one of the following:")
+                print("1. Close any other running instances of the server")
+                print("2. Wait a few seconds and try again")
+                print("3. Change the port number in the code")
+            elif e.errno == 13:  # Permission denied
+                print("\nPermission denied when trying to bind to port.")
+                print("Try running with sudo or choose a port number above 1024")
+        return
+
+@contextmanager
+def get_db_connection():
+    conn = sqlite3.connect('data/phonebook.db')
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     run_server() 

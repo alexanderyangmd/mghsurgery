@@ -12,34 +12,39 @@ async function loadAllSchedules() {
             updateChurchillAttendingDisplay(null);
             updateVascularAttendingDisplay(null);
             updateThoracicAttendingDisplay(null);
+            updateCardiacAttendingDisplay(null);
             return;
         }
 
         console.log('Loading all schedules for date:', currentDisplayDate);
-        const [teams, churchillAttendings, vascularAttendings, thoracicAttendings] = await Promise.all([
+        const [teams, churchillAttendings, vascularAttendings, thoracicAttendings, cardiacAttendings] = await Promise.all([
             fetchAmionData(currentDisplayDate),
             fetchChurchillData(currentDisplayDate),
             fetchVascularData(currentDisplayDate),
-            fetchThoracicData(currentDisplayDate)
+            fetchThoracicData(currentDisplayDate),
+            fetchCardiacData(currentDisplayDate)
         ]);
 
         console.log('Loaded schedules:', {
             teams: teams ? 'present' : 'missing',
             churchill: churchillAttendings ? 'present' : 'missing',
             vascular: vascularAttendings ? 'present' : 'missing',
-            thoracic: thoracicAttendings ? 'present' : 'missing'
+            thoracic: thoracicAttendings ? 'present' : 'missing',
+            cardiac: cardiacAttendings ? 'present' : 'missing'
         });
 
         updateScheduleDisplay(teams || {});
         updateChurchillAttendingDisplay(churchillAttendings);
         updateVascularAttendingDisplay(vascularAttendings);
         updateThoracicAttendingDisplay(thoracicAttendings);
+        updateCardiacAttendingDisplay(cardiacAttendings);
     } catch (error) {
         console.error('Error loading schedules:', error);
         updateScheduleDisplay({});
         updateChurchillAttendingDisplay(null);
         updateVascularAttendingDisplay(null);
         updateThoracicAttendingDisplay(null);
+        updateCardiacAttendingDisplay(null);
     }
 }
 
@@ -115,75 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     page.classList.add('active');
                 }
             });
-        });
-    });
-
-    // Phone Directory Functionality
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const phoneGrids = document.querySelectorAll('.phone-grid');
-    
-    // Sample data structure for phone numbers
-    const phoneDirectory = {
-        attending: [
-            { name: 'Dr. Smith', role: 'Chief of Surgery', number: '617-555-0101' },
-            { name: 'Dr. Johnson', role: 'Trauma Surgery', number: '617-555-0102' },
-            // Add more attending numbers...
-        ],
-        resident: [
-            { name: 'Dr. Brown', role: 'Chief Resident', number: '617-555-0201' },
-            { name: 'Dr. Davis', role: 'PGY-4', number: '617-555-0202' },
-            // Add more resident numbers...
-        ],
-        app: [
-            { name: 'Jane Smith', role: 'Surgical APP', number: '617-555-0251' },
-            { name: 'John Doe', role: 'Trauma APP', number: '617-555-0252' },
-            // Add more APP numbers...
-        ],
-        other: [
-            { name: 'OR Front Desk', role: 'Main Line', number: '617-555-0301' },
-            { name: 'PACU', role: 'Nurse Station', number: '617-555-0302' },
-            // Add more important numbers...
-        ]
-    };
-
-    // Function to create phone card
-    function createPhoneCard(contact) {
-        return `
-            <div class="phone-card">
-                <div class="contact-info">
-                    <div class="contact-name">${contact.name}</div>
-                    <div class="contact-role">${contact.role}</div>
-                </div>
-                <div class="phone-number">${contact.number}</div>
-            </div>
-        `;
-    }
-
-    // Function to update phone grids
-    function updatePhoneGrids(category = 'all') {
-        Object.entries(phoneDirectory).forEach(([key, contacts]) => {
-            const grid = document.querySelector(`#${key}-numbers .phone-grid`);
-            
-            if (category === 'all' || category === key) {
-                grid.innerHTML = contacts
-                    .map(contact => createPhoneCard(contact))
-                    .join('');
-                document.getElementById(`${key}-numbers`).style.display = 'block';
-            } else {
-                document.getElementById(`${key}-numbers`).style.display = 'none';
-            }
-        });
-    }
-
-    // Initialize phone grids
-    updatePhoneGrids();
-
-    // Handle category tab clicks
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            updatePhoneGrids(button.dataset.category);
         });
     });
 });
@@ -1058,6 +994,10 @@ function updateScheduleDisplay(teams) {
     if (pediatricsTeamSection) pediatricsTeamSection.style.display = pediatricsSection.children.length > 0 ? 'block' : 'none';
     if (transplantTeamSection) transplantTeamSection.style.display = transplantSection.children.length > 0 ? 'block' : 'none';
 
+    // Always show sections with attending banners, regardless of team members
+    const cardiacSection = document.getElementById('cardiac-section');
+    if (cardiacSection) cardiacSection.style.display = 'block';
+
     // Show unavailable message if no teams are displayed
     if (unavailableMessage) {
         const anyTeamsVisible = [
@@ -1257,4 +1197,527 @@ function updateThoracicAttendingDisplay(attendings) {
     // Update the attending and fellow names
     attendingElement.textContent = attendings.attending || 'Not assigned';
     fellowElement.textContent = attendings.fellow || 'Not assigned';
-} 
+}
+
+async function fetchCardiacData(date) {
+    try {
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        
+        const authToken = sessionStorage.getItem('authToken');
+        if (!authToken) return null;
+        
+        const response = await fetch(`/api/cardiac?day=${day}&month=${month}&year=${year}`, {
+            headers: {
+                'Authorization': 'Basic ' + authToken
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const csvText = await response.text();
+        if (!csvText || csvText.trim() === '') return null;
+        
+        const attendings = parseCardiacCSV(csvText);
+        return attendings;
+    } catch (error) {
+        console.error('Error loading cardiac data:', error);
+        return null;
+    }
+}
+
+function parseCardiacCSV(csvText) {
+    const lines = csvText.split('\n');
+    const attendings = {
+        attending: null,
+        fellow: null
+    };
+    
+    console.log('Parsing cardiac CSV data:', csvText);
+    
+    // Skip header lines
+    const dataLines = lines.slice(5);
+    
+    // Log all roles we find
+    const allRoles = new Set();
+    
+    dataLines.forEach(line => {
+        if (!line.trim()) return;
+        
+        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        if (!parts || parts.length < 4) return;
+        
+        // Extract division and role
+        const [division, name, , , role] = parts.map(p => p.replace(/"/g, '').trim());
+        allRoles.add(role);
+        
+        // Match roles to their respective positions
+        if (division === 'Attendings' && role === 'General Cardiac Call') {
+            console.log('Found cardiac attending:', name, 'with role:', role);
+            attendings.attending = name;
+        } else if (division === 'Resident' && role === 'In House Fellow') {
+            console.log('Found cardiac fellow:', name, 'with role:', role);
+            attendings.fellow = name;
+        }
+    });
+    
+    console.log('All roles found in cardiac data:', Array.from(allRoles));
+    console.log('Parsed cardiac attendings:', attendings);
+    return attendings;
+}
+
+function updateCardiacAttendingDisplay(attendings) {
+    // First ensure the main content is visible
+    const mainContent = document.getElementById('main-content');
+    if (mainContent && mainContent.classList.contains('hidden')) {
+        console.log('Main content is hidden, waiting for it to become visible');
+        setTimeout(() => updateCardiacAttendingDisplay(attendings), 500);
+        return;
+    }
+
+    // Then ensure we're on the correct page
+    const onCallPage = document.getElementById('on-call');
+    if (onCallPage && !onCallPage.classList.contains('active')) {
+        console.log('Not on the on-call page, cardiac elements may not be visible');
+        return;
+    }
+
+    // Find or create the cardiac section
+    let cardiacSection = document.getElementById('cardiac-section');
+    if (!cardiacSection) {
+        console.log('Creating cardiac section...');
+        cardiacSection = document.createElement('div');
+        cardiacSection.id = 'cardiac-section';
+        cardiacSection.className = 'team-section';
+        cardiacSection.innerHTML = `
+            <h3>Cardiac</h3>
+            <div class="attending-banner">
+                <div class="attending-role-row">
+                    <span class="role-label">On-Call Attending:</span>
+                    <span class="attending-name" id="cardiac-attending">Loading...</span>
+                </div>
+                <div class="attending-role-row">
+                    <span class="role-label">On-Call Fellow:</span>
+                    <span class="attending-name" id="cardiac-fellow">Loading...</span>
+                </div>
+            </div>
+            <div id="cardiac-team-grid" class="team-grid"></div>
+        `;
+
+        // Insert it before the last section (Resources)
+        const contentBody = document.querySelector('.content-body');
+        if (contentBody) {
+            contentBody.appendChild(cardiacSection);
+            console.log('Cardiac section added to DOM');
+        } else {
+            console.error('Could not find content-body to add cardiac section');
+            return;
+        }
+    }
+
+    // Ensure the section is visible
+    cardiacSection.style.display = 'block';
+
+    // Get the elements after creating/finding the section
+    const attendingElement = document.getElementById('cardiac-attending');
+    const fellowElement = document.getElementById('cardiac-fellow');
+
+    // Add debug logging
+    console.log('Cardiac elements after creation/find:', {
+        attending: attendingElement ? 'found' : 'missing',
+        fellow: fellowElement ? 'found' : 'missing',
+        section: cardiacSection ? 'found' : 'missing'
+    });
+
+    if (!attendingElement || !fellowElement) {
+        console.error('Could not find cardiac display elements even after creation');
+        return;
+    }
+
+    // Update the display
+    if (!attendings) {
+        attendingElement.textContent = 'Not Available';
+        fellowElement.textContent = 'Not Available';
+        return;
+    }
+
+    // Update attending - extract last name only
+    if (attendings.attending && attendings.attending.trim()) {
+        const nameParts = attendings.attending.split(' ');
+        const lastName = nameParts.length > 1 ? nameParts[1].split(',')[0] : attendings.attending;
+        attendingElement.textContent = lastName;
+    } else {
+        attendingElement.textContent = 'Not Available';
+    }
+
+    // Update fellow - extract last name only
+    if (attendings.fellow && attendings.fellow.trim()) {
+        const nameParts = attendings.fellow.split(' ');
+        const lastName = nameParts.length > 1 ? nameParts[1].split(',')[0] : attendings.fellow;
+        fellowElement.textContent = lastName;
+    } else {
+        fellowElement.textContent = 'Not Available';
+    }
+}
+
+function updatePhoneGrids(contacts, activeCategory = 'all') {
+    console.log('Updating phone grids with category:', activeCategory, 'Contacts:', contacts);
+    
+    // Get all phone category sections
+    const phoneSections = document.querySelectorAll('.phone-category');
+    
+    if (!phoneSections || phoneSections.length === 0) {
+        console.error('No phone category sections found');
+        return;
+    }
+
+    // Create a map of category names to display names
+    const categoryMap = {};
+    contacts.forEach(contact => {
+        if (contact.category_name) {
+            categoryMap[contact.category_name.toLowerCase()] = contact.category_display_name;
+        }
+    });
+
+    // Filter contacts based on active category
+    const filteredContacts = activeCategory === 'all' 
+        ? contacts 
+        : contacts.filter(contact => 
+            contact.category_name && 
+            contact.category_name.toLowerCase() === activeCategory.toLowerCase()
+        );
+
+    // Update sections based on active category
+    phoneSections.forEach(section => {
+        const sectionCategory = section.dataset.category;
+        if (!sectionCategory) {
+            console.error('Section missing category:', section);
+            return;
+        }
+
+        const grid = section.querySelector('.phone-grid');
+        if (!grid) return;
+
+        if (activeCategory === 'all' || sectionCategory.toLowerCase() === activeCategory.toLowerCase()) {
+            const sectionContacts = activeCategory === 'all'
+                ? contacts.filter(contact => 
+                    contact.category_name && 
+                    contact.category_name.toLowerCase() === sectionCategory.toLowerCase()
+                )
+                : filteredContacts;
+
+            if (sectionContacts.length > 0) {
+                grid.innerHTML = sectionContacts
+                    .map(contact => createPhoneCard(contact))
+                    .join('');
+                section.style.display = 'block';
+            } else {
+                grid.innerHTML = '<div class="no-results">No contacts found</div>';
+                section.style.display = activeCategory === 'all' ? 'none' : 'block';
+            }
+        } else {
+            section.style.display = 'none';
+        }
+    });
+}
+
+// Update initializePhoneDirectory function
+function initializePhoneDirectory() {
+    console.log('Initializing phone directory');
+    
+    // Remove any existing search inputs first
+    const existingSearch = document.querySelector('.phone-search');
+    if (existingSearch) {
+        existingSearch.remove();
+    }
+
+    // Phone Directory Functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search contacts...';
+    searchInput.className = 'phone-search';
+    
+    // Add search input to the category tabs container
+    const categoryTabs = document.querySelector('.category-tabs');
+    if (categoryTabs) {
+        categoryTabs.parentNode.insertBefore(searchInput, categoryTabs.nextSibling);
+    }
+
+    // Set up phone directory sections
+    const phoneDirectory = document.querySelector('.phone-directory');
+    if (phoneDirectory) {
+        // Clear existing sections
+        const existingSections = phoneDirectory.querySelectorAll('.phone-category');
+        existingSections.forEach(section => section.remove());
+
+        // Create sections for each category
+        const categories = ['attending', 'resident', 'app', 'other'];
+        const displayNames = {
+            'attending': 'Attendings',
+            'resident': 'Residents',
+            'app': 'APPs',
+            'other': 'Other'
+        };
+
+        categories.forEach(category => {
+            const section = document.createElement('div');
+            section.className = 'phone-category';
+            section.dataset.category = category;
+            
+            const title = document.createElement('h3');
+            title.textContent = displayNames[category];
+            section.appendChild(title);
+            
+            const grid = document.createElement('div');
+            grid.className = 'phone-grid';
+            section.appendChild(grid);
+            
+            phoneDirectory.appendChild(section);
+        });
+    }
+
+    // Set initial active state and ensure data-category attributes are set
+    tabButtons.forEach(button => {
+        // Set data-category if not already set
+        if (!button.dataset.category) {
+            // Get category from text content or id
+            const category = button.textContent.trim().toLowerCase();
+            button.dataset.category = category;
+        }
+        
+        // Remove any existing click listeners
+        button.replaceWith(button.cloneNode(true));
+    });
+
+    // Re-query buttons after replacing them
+    const newTabButtons = document.querySelectorAll('.tab-button');
+    const firstTab = newTabButtons[0];
+    if (firstTab) {
+        firstTab.classList.add('active');
+    }
+
+    // Initialize phone directory with 'all' category
+    loadPhoneDirectory('all', '');
+
+    // Handle category tab clicks
+    newTabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            console.log('Tab clicked:', button.dataset.category);
+            // Update active state
+            newTabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Get category from the button's dataset
+            const category = button.dataset.category || 'all';
+            loadPhoneDirectory(category, searchInput.value);
+        });
+    });
+
+    // Handle search input with debounce
+    let searchTimeout;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const activeTab = document.querySelector('.tab-button.active');
+            const category = activeTab ? activeTab.dataset.category || 'all' : 'all';
+            loadPhoneDirectory(category, e.target.value);
+        }, 300);
+    });
+}
+
+// Update loadPhoneDirectory function
+async function loadPhoneDirectory(category = 'all', searchTerm = '') {
+    console.log('Loading phone directory - Category:', category, 'Search:', searchTerm);
+    
+    try {
+        const authToken = sessionStorage.getItem('authToken');
+        if (!authToken) {
+            console.log('No auth token found, skipping phone directory load');
+            return;
+        }
+
+        // Construct the API URL with query parameters
+        let url = '/api/phone/contacts';
+        const params = new URLSearchParams();
+        if (category && category !== 'all') {
+            params.append('category', category);
+        }
+        if (searchTerm) {
+            params.append('search', searchTerm);
+        }
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        console.log('Fetching contacts from:', url);
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': 'Basic ' + authToken
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const contacts = await response.json();
+        console.log('Received contacts:', contacts.length);
+        updatePhoneGrids(contacts, category);
+    } catch (error) {
+        console.error('Error loading phone directory:', error);
+        // Only show error message if we're on the phone directory page
+        const phoneDirectory = document.querySelector('.phone-directory');
+        if (phoneDirectory && phoneDirectory.closest('.page.active')) {
+            document.querySelectorAll('.phone-grid').forEach(grid => {
+                grid.innerHTML = '<div class="error-message">Error loading contacts. Please try again later.</div>';
+            });
+        }
+    }
+}
+
+function createPhoneCard(contact) {
+    return `
+        <div class="phone-card">
+            <div class="contact-info">
+                <div class="contact-name">${contact.name}</div>
+                <div class="contact-role">${contact.role}</div>
+                ${contact.email ? `<div class="contact-email">${contact.email}</div>` : ''}
+            </div>
+            <div class="contact-numbers">
+                <div class="phone-number">${contact.phone_number}</div>
+                ${contact.pager_number ? `<div class="pager-number">Pager: ${contact.pager_number}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// Update the login function to initialize phone directory after successful login
+async function login() {
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('error-message');
+    
+    try {
+        const response = await fetch('/verify', {
+            headers: {
+                'Authorization': 'Basic ' + btoa(':' + password)
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            // Store login state and password
+            sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('authToken', btoa(':' + password));
+            // Load initial schedule after successful login
+            loadAllSchedules();
+            // Initialize phone directory after successful login
+            initializePhoneDirectory();
+            // Clear any error messages
+            if (errorMessage) {
+                errorMessage.textContent = '';
+                errorMessage.classList.remove('error');
+            }
+        } else {
+            if (errorMessage) {
+                errorMessage.textContent = 'Incorrect password';
+                errorMessage.classList.add('error');
+            }
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        if (errorMessage) {
+            if (error.message === 'Failed to fetch') {
+                errorMessage.textContent = 'Unable to connect to server. Please ensure the server is running and try again.';
+            } else {
+                errorMessage.textContent = 'An error occurred. Please try again.';
+            }
+            errorMessage.classList.add('error');
+        }
+    }
+}
+
+// Update the window.onload function
+window.onload = async function() {
+    const loginContainer = document.getElementById('login-container');
+    const mainContent = document.getElementById('main-content');
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    const authToken = sessionStorage.getItem('authToken');
+    const errorMessage = document.getElementById('error-message');
+    
+    if (isLoggedIn && authToken) {
+        // Verify the stored token
+        try {
+            const response = await fetch('/verify', {
+                headers: {
+                    'Authorization': 'Basic ' + authToken
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                loginContainer.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                // Load initial schedule after verifying stored token
+                loadAllSchedules();
+                // Initialize phone directory after verifying token
+                initializePhoneDirectory();
+            } else {
+                // Token is invalid, clear storage and show login
+                sessionStorage.removeItem('isLoggedIn');
+                sessionStorage.removeItem('authToken');
+                loginContainer.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+                if (errorMessage) {
+                    errorMessage.textContent = 'Session expired. Please log in again.';
+                    errorMessage.classList.add('error');
+                }
+            }
+        } catch (error) {
+            console.error('Error verifying token:', error);
+            // Clear session storage
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('authToken');
+            
+            loginContainer.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            
+            if (errorMessage) {
+                if (error.message === 'Failed to fetch') {
+                    errorMessage.textContent = 'Unable to connect to server. Please ensure the server is running and refresh the page.';
+                } else {
+                    errorMessage.textContent = 'Session expired. Please log in again.';
+                }
+                errorMessage.classList.add('error');
+            }
+        }
+    } else {
+        loginContainer.classList.remove('hidden');
+        mainContent.classList.add('hidden');
+    }
+
+    // Handle enter key press
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                login();
+            }
+        });
+    }
+}; 
